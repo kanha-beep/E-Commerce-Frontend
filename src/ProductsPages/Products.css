@@ -1,0 +1,18 @@
+.msg {
+  transition: all 0.3s ease; /* smooth animation */
+  height: 0; /* hidden initially */
+  overflow: hidden;
+}
+
+.msg.show {
+  height: auto; /* expands when message appears */
+  margin-bottom: 10px; /* space below message */
+}
+.danger {
+  height: 0;
+}
+.danger.show {
+  height: 3rem;
+  margin-bottom: 10px;
+  transition: all 0s ease;
+}

@@ -1,0 +1,161 @@
+import axios from "axios";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+export default function CartProducts() {
+  const navigate = useNavigate();
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [total, setTotal] = useState(0);
+
+  const getCartProducts = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.get(
+        "http://localhost:3000/api/products/cart-details",
+        {
+          headers: { "Authorization": `Bearer ${token}` }
+        }
+      );
+      const cartProducts = res.data.products || [];
+      setProducts(cartProducts);
+      
+      // Calculate total
+      const totalPrice = cartProducts.reduce((sum, product) => {
+        return sum + parseFloat(product.price || 0);
+      }, 0);
+      setTotal(totalPrice);
+    } catch (e) {
+      console.log("Error fetching cart:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    getCartProducts();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{height: "50vh"}}>
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container">
+      <div className="row mb-4">
+        <div className="col-12">
+          <div className="d-flex justify-content-between align-items-center">
+            <h2 className="text-primary mb-0">
+              <i className="bi bi-cart me-2"></i>
+              Shopping Cart
+            </h2>
+            <button
+              className="btn btn-outline-primary"
+              onClick={() => navigate("/")}
+            >
+              <i className="bi bi-arrow-left me-2"></i>
+              Continue Shopping
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {products.length === 0 ? (
+        <div className="text-center py-5">
+          <i className="bi bi-cart-x display-1 text-muted"></i>
+          <h4 className="text-muted mt-3">Your cart is empty</h4>
+          <p className="text-muted">Add some products to get started!</p>
+          <button
+            onClick={() => navigate("/")}
+            className="btn btn-primary mt-3"
+          >
+            <i className="bi bi-shop me-2"></i>
+            Start Shopping
+          </button>
+        </div>
+      ) : (
+        <div className="row">
+          <div className="col-lg-8">
+            <div className="card shadow-sm border-0">
+              <div className="card-header bg-light">
+                <h5 className="mb-0">Cart Items ({products.length})</h5>
+              </div>
+              <div className="card-body p-0">
+                {products.map((product, index) => (
+                  <div key={product._id} className={`p-4 ${index !== products.length - 1 ? 'border-bottom' : ''}`}>
+                    <div className="row align-items-center">
+                      <div className="col-md-2">
+                        {product.image ? (
+                          <img
+                            src={`http://localhost:3000/ProductsUploads/${product.image}`}
+                            alt={product.name}
+                            className="img-fluid rounded"
+                            style={{ height: "80px", width: "80px", objectFit: "cover" }}
+                          />
+                        ) : (
+                          <div
+                            className="d-flex align-items-center justify-content-center bg-light rounded"
+                            style={{ height: "80px", width: "80px" }}
+                          >
+                            <i className="bi bi-image text-muted"></i>
+                          </div>
+                        )}
+                      </div>
+                      <div className="col-md-6">
+                        <h6 className="mb-1">{product.name}</h6>
+                        <small className="text-muted">ID: {product._id}</small>
+                      </div>
+                      <div className="col-md-2 text-center">
+                        <span className="fw-bold text-success">${product.price}</span>
+                      </div>
+                      <div className="col-md-2 text-end">
+                        <button className="btn btn-sm btn-outline-danger">
+                          <i className="bi bi-trash"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="col-lg-4">
+            <div className="card shadow-sm border-0 sticky-top">
+              <div className="card-header bg-primary text-white">
+                <h5 className="mb-0">Order Summary</h5>
+              </div>
+              <div className="card-body">
+                <div className="d-flex justify-content-between mb-3">
+                  <span>Subtotal ({products.length} items):</span>
+                  <span className="fw-bold">${total.toFixed(2)}</span>
+                </div>
+                <div className="d-flex justify-content-between mb-3">
+                  <span>Shipping:</span>
+                  <span className="text-success">FREE</span>
+                </div>
+                <hr />
+                <div className="d-flex justify-content-between mb-4">
+                  <span className="fw-bold fs-5">Total:</span>
+                  <span className="fw-bold fs-5 text-success">${total.toFixed(2)}</span>
+                </div>
+                <div className="d-grid">
+                  <button className="btn btn-success btn-lg">
+                    <i className="bi bi-credit-card me-2"></i>
+                    Proceed to Checkout
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
