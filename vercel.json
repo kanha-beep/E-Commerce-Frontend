@@ -1,0 +1,9 @@
+{
+  "functions": {
+    "app.js": {
+      "runtime": "nodejs20.x"
+    }
+  },
+  "buildCommand": "npm install && npm run build",
+  "outputDirectory": "dist"
+}
