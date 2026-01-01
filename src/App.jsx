@@ -13,25 +13,25 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState({});
   const [authChecked, setAuthChecked] = useState(false);
-  
+
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const res = await api.get('/api/auth/me');
-        setUser(res.data.user);
-        setIsLoggedIn(true);
-      } catch (e) {
-        setIsLoggedIn(false);
-        setUser({});
-      } finally {
-        setAuthChecked(true);
-      }
-    };
-    
-    if (!authChecked) {
+    if (setIsLoggedIn) {
+      const checkAuth = async () => {
+        try {
+          const res = await api.get("/api/auth/me");
+          setUser(res.data.user);
+          setIsLoggedIn(true);
+        } catch (e) {
+          console.log("Error checking auth: ", e?.response?.data);
+          setIsLoggedIn(false);
+          setUser({});
+        } finally {
+          setAuthChecked(true);
+        }
+      };
       checkAuth();
     }
-  }, [authChecked]);
+  }, [isLoggedIn]);
 
   if (!authChecked) {
     return (
