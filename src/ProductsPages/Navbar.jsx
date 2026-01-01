@@ -1,15 +1,16 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { api } from "../../api";
 
 export default function Navbar() {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    navigate("/auth/login");
+  const handleLogout = async () => {
+    const res = await api.post("/auth/logout");
+    console.log("logout: ", res?.data);
+    navigate("/auth");
   };
 
   return (
@@ -19,11 +20,11 @@ export default function Navbar() {
           <i className="bi bi-shop me-2"></i>
           Amazon Store
         </Link>
-        
-        <button 
-          className="navbar-toggler" 
-          type="button" 
-          data-bs-toggle="collapse" 
+
+        <button
+          className="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
           data-bs-target="#navbarNav"
           aria-controls="navbarNav"
           aria-expanded="false"
@@ -31,7 +32,7 @@ export default function Navbar() {
         >
           <span className="navbar-toggler-icon"></span>
         </button>
-        
+
         <div className="collapse navbar-collapse" id="navbarNav">
           <ul className="navbar-nav ms-auto">
             {token ? (
@@ -55,27 +56,30 @@ export default function Navbar() {
                   </Link>
                 </li>
                 <li className="nav-item dropdown">
-                  <a className="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                  <a
+                    className="nav-link dropdown-toggle"
+                    href="#"
+                    role="button"
+                    data-bs-toggle="dropdown"
+                  >
                     <i className="bi bi-person me-1"></i>
                     {user.username}
                   </a>
                   <ul className="dropdown-menu">
-                    <li><button className="dropdown-item" onClick={handleLogout}>Logout</button></li>
+                    <li>
+                      <button className="dropdown-item" onClick={handleLogout}>
+                        Logout
+                      </button>
+                    </li>
                   </ul>
                 </li>
               </>
             ) : (
               <>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/auth/login">
+                  <Link className="nav-link" to="/auth">
                     <i className="bi bi-box-arrow-in-right me-1"></i>
-                    Login
-                  </Link>
-                </li>
-                <li className="nav-item">
-                  <Link className="nav-link" to="/auth/signup">
-                    <i className="bi bi-person-plus me-1"></i>
-                    Sign Up
+                    Login / Sign Up
                   </Link>
                 </li>
               </>

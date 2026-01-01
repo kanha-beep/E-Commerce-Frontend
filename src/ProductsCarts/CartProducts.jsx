@@ -1,6 +1,6 @@
-import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { api } from "../../api";
 
 export default function CartProducts() {
   const navigate = useNavigate();
@@ -10,14 +10,8 @@ export default function CartProducts() {
 
   const getCartProducts = async () => {
     try {
-      const token = localStorage.getItem("token");
       console.log("getting cart details");
-      const res = await axios.get(
-        "http://localhost:3000/api/products/cart-details",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const res = await api.get("/products/cart-details");
       console.log("got card products: ", res?.data);
       const cartProducts = res.data.products || [];
       setProducts(cartProducts);
@@ -51,14 +45,8 @@ export default function CartProducts() {
     );
   }
   const handleCartDelete = async (id) => {
-    const token = localStorage.getItem("token");
     try {
-      await axios.delete(
-        `http://localhost:3000/api/products/cart-details/${id}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      await api.delete(`/products/cart-details/${id}`);
     } catch (e) {
       console.log("Error deleting cart item: ", e?.response?.data);
     } finally {

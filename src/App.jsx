@@ -1,6 +1,5 @@
 import { Route, Routes } from "react-router-dom";
-import SignUp from "./ProductsAuth/SignUp.jsx";
-import LogIn from "./ProductsAuth/LogIn.jsx";
+import Auth from "./ProductsAuth/Auth.jsx";
 import AllProducts from "./ProductsPages/AllProducts.jsx";
 import NewProducts from "./ProductsPages/NewProducts.jsx";
 import Products from "./ProductsPages/Products.jsx";
@@ -14,8 +13,7 @@ function App() {
       <Navbar />
       <div className="container-fluid py-4">
         <Routes>
-          <Route path="/auth/login" element={<LogIn />} />
-          <Route path="/auth/signup" element={<SignUp />} />
+          <Route path="/auth" element={<Auth />} />
           <Route path="/" element={<AllProducts />} />
           <Route path="/api/products" element={<AllProducts />} />
           <Route path="/api/products/new" element={<NewProducts />} />

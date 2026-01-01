@@ -1,6 +1,6 @@
-import axios from "axios";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { api } from "../../api";
 
 export default function NewProducts() {
   const [image, setImage] = useState("");
@@ -45,16 +45,18 @@ export default function NewProducts() {
         formData.append("image", image);
       }
 
-      console.log("Sending data:", { name: data.name, price: data.price, hasImage: !!image });
-      
-      const token = localStorage.getItem("token");
-      const res = await axios.post(
+      console.log("Sending data:", {
+        name: data.name,
+        price: data.price,
+        hasImage: !!image,
+      });
+
+      const res = await api.post(
         "http://localhost:3000/api/products/new",
         formData,
         {
           headers: {
             "Content-Type": "multipart/form-data",
-            "Authorization": `Bearer ${token}`,
           },
         }
       );
@@ -86,7 +88,7 @@ export default function NewProducts() {
                   {error}
                 </div>
               )}
-              
+
               <form onSubmit={handleNewProduct}>
                 <div className="mb-3">
                   <label htmlFor="name" className="form-label fw-bold">
@@ -162,7 +164,10 @@ export default function NewProducts() {
                   >
                     {loading ? (
                       <>
-                        <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                        <span
+                          className="spinner-border spinner-border-sm me-2"
+                          role="status"
+                        ></span>
                         Adding...
                       </>
                     ) : (

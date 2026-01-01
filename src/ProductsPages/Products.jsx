@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
+import { api } from "./../../api.js";
 
 export default function Products() {
   const { productsId } = useParams();
@@ -13,9 +13,7 @@ export default function Products() {
   const [imageData, setImageData] = useState("");
   const getProduct = async () => {
     try {
-      const res = await axios.get(
-        `http://localhost:3000/api/products/${productsId}`
-      );
+      const res = await api.get(`/products/${productsId}`);
       setProduct(res.data);
     } catch (e) {
       console.log("Error fetching product:", e);
@@ -27,18 +25,13 @@ export default function Products() {
   const addToCart = async () => {
     setAddingToCart(true);
     try {
-      const token = localStorage.getItem("token");
-      await axios.post(
-        `http://localhost:3000/api/products/${productsId}/add-cart`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const res = await api.post(`/products/${productsId}/add-cart`, {});
+      console.log("added to cart: ", res?.data);
       setMessage("Product added to cart successfully!");
       setTimeout(() => setMessage(""), 3000);
     } catch (e) {
-      setMessage(e.response?.data?.message || "Error adding to cart");
+      console.log("error: ", e?.response?.data?.error);
+      setMessage(e.response?.data?.error || "Error adding to cart");
       setTimeout(() => setMessage(""), 3000);
     } finally {
       setAddingToCart(false);
@@ -76,28 +69,19 @@ export default function Products() {
   }
 
   const handleUpdateImage = async (e, id) => {
-    const token = localStorage.getItem("token");
     const formData = new FormData();
     formData.append("image", imageData);
     e.preventDefault();
     try {
       console.log("update starts");
-      const res = await axios.patch(
-        `http://localhost:3000/api/products/${id}`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await api.patch(`/products/${id}`, formData);
       console.log("image updated: ", res?.data);
       setShowModal(false);
     } catch (e) {
       console.log("Error updating image: ", e?.response?.data?.error);
     } finally {
       setImageData("");
-      getProduct()
+      getProduct();
     }
   };
 
