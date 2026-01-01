@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../api";
-
+import { API_URL } from "../../api";
 export default function CartProducts() {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
@@ -105,7 +105,7 @@ export default function CartProducts() {
                       <div className="col-md-2">
                         {product.image ? (
                           <img
-                            src={`http://localhost:3000/ProductsUploads/${product.image}`}
+                            src={`${API_URL}/ProductsUploads/${product.image}`}
                             alt={product.name}
                             className="img-fluid rounded"
                             style={{

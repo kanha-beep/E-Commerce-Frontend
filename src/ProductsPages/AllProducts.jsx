@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { api, API_URL } from "../../api";
 
 export default function AllProducts() {
   const navigate = useNavigate();
@@ -9,7 +9,7 @@ export default function AllProducts() {
 
   const getAllProducts = async () => {
     try {
-      const res = await axios.get("http://localhost:3000/api/products");
+      const res = await api.get("/api/products");
       setProducts(res.data);
     } catch (e) {
       console.log("Error fetching products:", e?.response?.data);
@@ -24,7 +24,10 @@ export default function AllProducts() {
 
   if (loading) {
     return (
-      <div className="d-flex justify-content-center align-items-center" style={{height: "50vh"}}>
+      <div
+        className="d-flex justify-content-center align-items-center"
+        style={{ height: "50vh" }}
+      >
         <div className="spinner-border text-primary" role="status">
           <span className="visually-hidden">Loading...</span>
         </div>
@@ -72,7 +75,7 @@ export default function AllProducts() {
                 <div className="position-relative">
                   {product.image ? (
                     <img
-                      src={`http://localhost:3000/ProductsUploads/${product.image}`}
+                      src={`${API_URL}/ProductsUploads/${product.image}`}
                       className="card-img-top"
                       alt={product.name}
                       style={{ height: "250px", objectFit: "cover" }}
