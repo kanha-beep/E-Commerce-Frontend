@@ -2,14 +2,15 @@ import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../../api";
 
-export default function Navbar() {
+export default function Navbar({ isLoggedIn, setIsLoggedIn }) {
   const navigate = useNavigate();
-  const token = localStorage.getItem("token");
+  // const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
   const handleLogout = async () => {
     const res = await api.post("/api/auth/logout");
     console.log("logout: ", res?.data);
+    setIsLoggedIn(false);
     navigate("/auth");
   };
 
@@ -35,7 +36,7 @@ export default function Navbar() {
 
         <div className="collapse navbar-collapse" id="navbarNav">
           <ul className="navbar-nav ms-auto">
-            {token ? (
+            {isLoggedIn ? (
               <>
                 <li className="nav-item">
                   <Link className="nav-link" to="/">

@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import { api } from "../../api";
 
-export default function Auth() {
+export default function Auth({ setIsLoggedIn }) {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     username: "",
@@ -29,8 +28,9 @@ export default function Auth() {
         ? { email: formData.email, password: formData.password }
         : formData;
       console.log("login starts");
-      const res = await api.post(endpoint, data);
+      await api.post(endpoint, data);
       console.log("Login successful, cookie set by server");
+      setIsLoggedIn(true);
       navigate("/");
     } catch (err) {
       setError(
@@ -38,6 +38,7 @@ export default function Auth() {
           err.message ||
           `${isLogin ? "Login" : "Registration"} failed`
       );
+      setIsLoggedIn(false);
     } finally {
       setLoading(false);
     }
