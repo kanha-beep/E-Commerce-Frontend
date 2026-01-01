@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "./../../api.js";
+import API_URL from "./../../api.js";
 
 export default function Products() {
   const { productsId } = useParams();
@@ -115,7 +116,7 @@ export default function Products() {
           <div className="card border-0 shadow-sm">
             {product.image ? (
               <img
-                src={`http://localhost:3000/ProductsUploads/${product.image}`}
+                src={`${API_URL.replace('/api', '')}/ProductsUploads/${product.image}`}
                 className="card-img-top"
                 alt={product.name}
                 style={{ height: "400px", objectFit: "cover" }}
