@@ -193,7 +193,7 @@ export default function Products({ userRoles, user }) {
                   <i className="bi bi-cart me-2"></i>
                   View Cart
                 </button>
-                {product.owner.toString() === user.id.toString() && (
+                {product?.owner?.toString() === user?.id?.toString() && (
                   <button
                     className="btn btn-outline-secondary"
                     onClick={() => setShowModal(true)}
