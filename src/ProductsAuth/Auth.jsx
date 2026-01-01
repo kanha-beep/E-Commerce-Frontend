@@ -24,16 +24,13 @@ export default function Auth() {
     setError("");
 
     try {
-      const endpoint = isLogin ? "auth/login" : "auth/register";
+      const endpoint = isLogin ? "/api/auth/login" : "/api/auth/register";
       const data = isLogin
         ? { email: formData.email, password: formData.password }
         : formData;
       console.log("login starts");
-      const res = await api.post(`/api/${endpoint}`, data);
-      const token = res?.data;
-      localStorage.setItem("token", res.data);
-      console.log("token saved: ", token);
-      localStorage.setItem("user", JSON.stringify(res.data.user));
+      const res = await api.post(endpoint, data);
+      console.log("Login successful, cookie set by server");
       navigate("/");
     } catch (err) {
       setError(
