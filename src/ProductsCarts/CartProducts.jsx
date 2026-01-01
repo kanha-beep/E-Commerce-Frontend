@@ -11,7 +11,7 @@ export default function CartProducts() {
   const getCartProducts = async () => {
     try {
       console.log("getting cart details");
-      const res = await api.get("/products/cart-details");
+      const res = await api.get("/api/products/cart-details");
       console.log("got card products: ", res?.data);
       const cartProducts = res.data.products || [];
       setProducts(cartProducts);
@@ -46,7 +46,7 @@ export default function CartProducts() {
   }
   const handleCartDelete = async (id) => {
     try {
-      await api.delete(`/products/cart-details/${id}`);
+      await api.delete(`/api/products/cart-details/${id}`);
     } catch (e) {
       console.log("Error deleting cart item: ", e?.response?.data);
     } finally {

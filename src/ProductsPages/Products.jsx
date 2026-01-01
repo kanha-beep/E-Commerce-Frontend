@@ -14,7 +14,7 @@ export default function Products() {
   const [imageData, setImageData] = useState("");
   const getProduct = async () => {
     try {
-      const res = await api.get(`/products/${productsId}`);
+      const res = await api.get(`/api/products/${productsId}`);
       setProduct(res.data);
     } catch (e) {
       console.log("Error fetching product:", e?.response?.data?.message);
@@ -27,7 +27,7 @@ export default function Products() {
   const addToCart = async () => {
     setAddingToCart(true);
     try {
-      const res = await api.post(`/products/${productsId}/add-cart`, {});
+      const res = await api.post(`/api/products/${productsId}/add-cart`, {});
       console.log("added to cart: ", res?.data);
       setMessage("Product added to cart successfully!");
       setTimeout(() => setMessage(""), 3000);
@@ -76,7 +76,7 @@ export default function Products() {
     e.preventDefault();
     try {
       console.log("update starts");
-      const res = await api.patch(`/products/${id}`, formData);
+      const res = await api.patch(`/api/products/${id}`, formData);
       console.log("image updated: ", res?.data);
       setShowModal(false);
     } catch (e) {

@@ -52,7 +52,7 @@ export default function NewProducts() {
       });
 
       const res = await api.post(
-        "http://localhost:3000/api/products/new",
+        "/api/products/new",
         formData,
         {
           headers: {

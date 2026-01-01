@@ -8,7 +8,7 @@ export default function Navbar() {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
 
   const handleLogout = async () => {
-    const res = await api.post("/auth/logout");
+    const res = await api.post("/api/auth/logout");
     console.log("logout: ", res?.data);
     navigate("/auth");
   };

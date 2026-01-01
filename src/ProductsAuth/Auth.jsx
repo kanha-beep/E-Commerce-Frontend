@@ -29,7 +29,7 @@ export default function Auth() {
         ? { email: formData.email, password: formData.password }
         : formData;
       console.log("login starts");
-      const res = await api.post(`${endpoint}`, data);
+      const res = await api.post(`/api/${endpoint}`, data);
       const token = res?.data;
       localStorage.setItem("token", res.data);
       console.log("token saved: ", token);
