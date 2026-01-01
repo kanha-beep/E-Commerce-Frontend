@@ -6,25 +6,60 @@ import Products from "./ProductsPages/Products.jsx";
 import EditProducts from "./ProductsPages/EditProducts.jsx";
 import Navbar from "./ProductsPages/Navbar.jsx";
 import CartProducts from "./ProductsCarts/CartProducts.jsx";
-import { useState } from "react";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
+import { api } from "./api.js";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState({});
+  const [authChecked, setAuthChecked] = useState(false);
+  
   useEffect(() => {
-    if (localStorage.getItem("token")) {
-      setIsLoggedIn(true);
+    const checkAuth = async () => {
+      try {
+        const res = await api.get('/api/auth/me');
+        setUser(res.data.user);
+        setIsLoggedIn(true);
+      } catch (e) {
+        setIsLoggedIn(false);
+        setUser({});
+      } finally {
+        setAuthChecked(true);
+      }
+    };
+    
+    if (!authChecked) {
+      checkAuth();
     }
-  }, []);
+  }, [authChecked]);
+
+  if (!authChecked) {
+    return (
+      <div className="d-flex justify-content-center align-items-center vh-100">
+        <div className="spinner-border text-primary" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-vh-100 bg-light">
-      <Navbar isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
+      <Navbar
+        isLoggedIn={isLoggedIn}
+        setIsLoggedIn={setIsLoggedIn}
+        user={user}
+      />
       <div className="container-fluid py-4">
         <Routes>
           <Route
             path="/auth"
             element={
-              <Auth isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
+              <Auth
+                isLoggedIn={isLoggedIn}
+                setIsLoggedIn={setIsLoggedIn}
+                setUser={setUser}
+              />
             }
           />
           <Route path="/" element={<AllProducts />} />

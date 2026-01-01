@@ -2,11 +2,10 @@ import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../../api";
 
-export default function Navbar({ isLoggedIn, setIsLoggedIn }) {
+export default function Navbar({ isLoggedIn, setIsLoggedIn, user }) {
   const navigate = useNavigate();
   // const token = localStorage.getItem("token");
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-
+  console.log("user navbar: ", user);
   const handleLogout = async () => {
     const res = await api.post("/api/auth/logout");
     console.log("logout: ", res?.data);
@@ -64,7 +63,7 @@ export default function Navbar({ isLoggedIn, setIsLoggedIn }) {
                     data-bs-toggle="dropdown"
                   >
                     <i className="bi bi-person me-1"></i>
-                    {user.username}
+                    {user?.username || 'User'}
                   </a>
                   <ul className="dropdown-menu">
                     <li>
