@@ -42,7 +42,7 @@ export default function AllProducts() {
               All Products
             </h2>
             <button
-              onClick={() => navigate("/api/products/carts-show/user")}
+              onClick={() => navigate("/products/carts-show/user")}
               className="btn btn-outline-primary"
             >
               <i className="bi bi-cart me-2"></i>
@@ -57,7 +57,7 @@ export default function AllProducts() {
           <i className="bi bi-box-seam display-1 text-muted"></i>
           <h4 className="text-muted mt-3">No products available</h4>
           <button
-            onClick={() => navigate("/api/products/new")}
+            onClick={() => navigate("/products/new")}
             className="btn btn-primary mt-3"
           >
             <i className="bi bi-plus-circle me-2"></i>
@@ -94,7 +94,7 @@ export default function AllProducts() {
                   <div className="mt-auto">
                     <button
                       className="btn btn-primary w-100"
-                      onClick={() => navigate(`/api/products/${product._id}`)}
+                      onClick={() => navigate(`/products/${product._id}`)}
                     >
                       <i className="bi bi-eye me-2"></i>
                       View Details

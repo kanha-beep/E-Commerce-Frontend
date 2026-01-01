@@ -184,7 +184,7 @@ export default function Products() {
 
                 <button
                   className="btn btn-outline-primary btn-lg"
-                  onClick={() => navigate("/api/products/carts-show/user")}
+                  onClick={() => navigate("/products/carts-show/user")}
                 >
                   <i className="bi bi-cart me-2"></i>
                   View Cart

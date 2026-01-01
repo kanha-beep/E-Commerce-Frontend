@@ -15,11 +15,11 @@ function App() {
         <Routes>
           <Route path="/auth" element={<Auth />} />
           <Route path="/" element={<AllProducts />} />
-          <Route path="/api/products" element={<AllProducts />} />
-          <Route path="/api/products/new" element={<NewProducts />} />
-          <Route path="/api/products/:productsId" element={<Products />} />
-          <Route path="/api/products/:productsId/edit" element={<EditProducts />} />
-          <Route path="/api/products/carts-show/:usersId" element={<CartProducts />} />
+          <Route path="/products" element={<AllProducts />} />
+          <Route path="/products/new" element={<NewProducts />} />
+          <Route path="/products/:productsId" element={<Products />} />
+          <Route path="/products/:productsId/edit" element={<EditProducts />} />
+          <Route path="/products/carts-show/:usersId" element={<CartProducts />} />
         </Routes>
       </div>
     </div>
