@@ -44,13 +44,13 @@ export default function Navbar() {
                   </Link>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/api/products/new">
+                  <Link className="nav-link" to="/products/new">
                     <i className="bi bi-plus-circle me-1"></i>
                     Add Product
                   </Link>
                 </li>
                 <li className="nav-item">
-                  <Link className="nav-link" to="/api/products/carts-show/user">
+                  <Link className="nav-link" to="/products/carts-show/user">
                     <i className="bi bi-cart me-1"></i>
                     Cart
                   </Link>
