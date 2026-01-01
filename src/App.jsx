@@ -12,35 +12,21 @@ import { api } from "./api.js";
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState({});
-  const [authChecked, setAuthChecked] = useState(false);
-
-  useEffect(() => {
-    if (isLoggedIn) {
-      const checkAuth = async () => {
-        try {
-          const res = await api.get("/api/auth/me");
-          setUser(res.data.user);
-          setIsLoggedIn(true);
-        } catch (e) {
-          console.log("Error checking auth: ", e?.response?.data);
-          setIsLoggedIn(false);
-          setUser({});
-        } finally {
-          setAuthChecked(true);
-        }
-      };
-      checkAuth();
+  // const [authChecked, setAuthChecked] = useState(false);
+  const checkAuth = async () => {
+    try {
+      const res = await api.get("/api/auth/me");
+      console.log("got current user: ", res?.data);
+      setUser(res.data.user);
+      setIsLoggedIn(true);
+    } catch (e) {
+      console.log("Error checking auth: ", e?.response?.data);
+      setIsLoggedIn(false);
+      setUser({});
     }
-  }, [isLoggedIn]);
-
-  if (!authChecked) {
-    return (
-      <div className="d-flex justify-content-center align-items-center vh-100">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
-      </div>
-    );
+  };
+  if (isLoggedIn) {
+    checkAuth();
   }
 
   return (
