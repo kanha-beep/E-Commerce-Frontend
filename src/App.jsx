@@ -15,7 +15,7 @@ function App() {
   const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    if (setIsLoggedIn) {
+    if (isLoggedIn) {
       const checkAuth = async () => {
         try {
           const res = await api.get("/api/auth/me");
