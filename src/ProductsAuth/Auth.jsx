@@ -24,7 +24,7 @@ export default function Auth() {
     setError("");
 
     try {
-      const endpoint = isLogin ? "/auth/login" : "/auth/register";
+      const endpoint = isLogin ? "auth/login" : "auth/register";
       const data = isLogin
         ? { email: formData.email, password: formData.password }
         : formData;
