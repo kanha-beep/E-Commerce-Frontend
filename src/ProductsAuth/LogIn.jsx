@@ -18,12 +18,14 @@ export default function LogIn() {
     setError("");
 
     try {
+      console.log("login stars")
       const res = await axios.post("http://localhost:3000/api/auth/login", formData);
+      console.log("login done", res.data);
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
       navigate("/");
     } catch (err) {
-      setError(err.response?.data?.message || "Login failed");
+      setError(err.response?.data?.message || err.message || "Login failed");
     } finally {
       setLoading(false);
     }

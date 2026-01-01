@@ -12,7 +12,7 @@ export default function AllProducts() {
       const res = await axios.get("http://localhost:3000/api/products");
       setProducts(res.data);
     } catch (e) {
-      console.log("Error fetching products:", e);
+      console.log("Error fetching products:", e?.response?.data);
     } finally {
       setLoading(false);
     }

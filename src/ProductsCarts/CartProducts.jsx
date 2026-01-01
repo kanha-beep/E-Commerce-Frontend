@@ -11,22 +11,24 @@ export default function CartProducts() {
   const getCartProducts = async () => {
     try {
       const token = localStorage.getItem("token");
+      console.log("getting cart details");
       const res = await axios.get(
         "http://localhost:3000/api/products/cart-details",
         {
-          headers: { "Authorization": `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
+      console.log("got card products: ", res?.data);
       const cartProducts = res.data.products || [];
       setProducts(cartProducts);
-      
+
       // Calculate total
       const totalPrice = cartProducts.reduce((sum, product) => {
         return sum + parseFloat(product.price || 0);
       }, 0);
       setTotal(totalPrice);
     } catch (e) {
-      console.log("Error fetching cart:", e);
+      console.log("Error fetching cart:", e?.response?.data?.error);
     } finally {
       setLoading(false);
     }
@@ -38,14 +40,31 @@ export default function CartProducts() {
 
   if (loading) {
     return (
-      <div className="d-flex justify-content-center align-items-center" style={{height: "50vh"}}>
+      <div
+        className="d-flex justify-content-center align-items-center"
+        style={{ height: "50vh" }}
+      >
         <div className="spinner-border text-primary" role="status">
           <span className="visually-hidden">Loading...</span>
         </div>
       </div>
     );
   }
-
+  const handleCartDelete = async (id) => {
+    const token = localStorage.getItem("token");
+    try {
+      await axios.delete(
+        `http://localhost:3000/api/products/cart-details/${id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+    } catch (e) {
+      console.log("Error deleting cart item: ", e?.response?.data);
+    } finally {
+      getCartProducts();
+    }
+  };
   return (
     <div className="container">
       <div className="row mb-4">
@@ -88,7 +107,12 @@ export default function CartProducts() {
               </div>
               <div className="card-body p-0">
                 {products.map((product, index) => (
-                  <div key={product._id} className={`p-4 ${index !== products.length - 1 ? 'border-bottom' : ''}`}>
+                  <div
+                    key={product._id}
+                    className={`p-4 ${
+                      index !== products.length - 1 ? "border-bottom" : ""
+                    }`}
+                  >
                     <div className="row align-items-center">
                       <div className="col-md-2">
                         {product.image ? (
@@ -96,7 +120,11 @@ export default function CartProducts() {
                             src={`http://localhost:3000/ProductsUploads/${product.image}`}
                             alt={product.name}
                             className="img-fluid rounded"
-                            style={{ height: "80px", width: "80px", objectFit: "cover" }}
+                            style={{
+                              height: "80px",
+                              width: "80px",
+                              objectFit: "cover",
+                            }}
                           />
                         ) : (
                           <div
@@ -112,11 +140,16 @@ export default function CartProducts() {
                         <small className="text-muted">ID: {product._id}</small>
                       </div>
                       <div className="col-md-2 text-center">
-                        <span className="fw-bold text-success">${product.price}</span>
+                        <span className="fw-bold text-success">
+                          Rs {product.price}
+                        </span>
                       </div>
                       <div className="col-md-2 text-end">
                         <button className="btn btn-sm btn-outline-danger">
-                          <i className="bi bi-trash"></i>
+                          <i
+                            className="bi bi-trash"
+                            onClick={() => handleCartDelete(product._id)}
+                          ></i>
                         </button>
                       </div>
                     </div>
@@ -134,7 +167,7 @@ export default function CartProducts() {
               <div className="card-body">
                 <div className="d-flex justify-content-between mb-3">
                   <span>Subtotal ({products.length} items):</span>
-                  <span className="fw-bold">${total.toFixed(2)}</span>
+                  <span className="fw-bold">Rs {total.toFixed(2)}</span>
                 </div>
                 <div className="d-flex justify-content-between mb-3">
                   <span>Shipping:</span>
@@ -143,7 +176,9 @@ export default function CartProducts() {
                 <hr />
                 <div className="d-flex justify-content-between mb-4">
                   <span className="fw-bold fs-5">Total:</span>
-                  <span className="fw-bold fs-5 text-success">${total.toFixed(2)}</span>
+                  <span className="fw-bold fs-5 text-success">
+                    Rs {total.toFixed(2)}
+                  </span>
                 </div>
                 <div className="d-grid">
                   <button className="btn btn-success btn-lg">

@@ -9,10 +9,13 @@ export default function Products() {
   const [loading, setLoading] = useState(true);
   const [addingToCart, setAddingToCart] = useState(false);
   const [message, setMessage] = useState("");
-
+  const [showModal, setShowModal] = useState(false);
+  const [imageData, setImageData] = useState("");
   const getProduct = async () => {
     try {
-      const res = await axios.get(`http://localhost:3000/api/products/${productsId}`);
+      const res = await axios.get(
+        `http://localhost:3000/api/products/${productsId}`
+      );
       setProduct(res.data);
     } catch (e) {
       console.log("Error fetching product:", e);
@@ -25,9 +28,13 @@ export default function Products() {
     setAddingToCart(true);
     try {
       const token = localStorage.getItem("token");
-      await axios.post(`http://localhost:3000/api/products/${productsId}/add-cart`, {}, {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
+      await axios.post(
+        `http://localhost:3000/api/products/${productsId}/add-cart`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       setMessage("Product added to cart successfully!");
       setTimeout(() => setMessage(""), 3000);
     } catch (e) {
@@ -44,7 +51,10 @@ export default function Products() {
 
   if (loading) {
     return (
-      <div className="d-flex justify-content-center align-items-center" style={{height: "50vh"}}>
+      <div
+        className="d-flex justify-content-center align-items-center"
+        style={{ height: "50vh" }}
+      >
         <div className="spinner-border text-primary" role="status">
           <span className="visually-hidden">Loading...</span>
         </div>
@@ -65,11 +75,40 @@ export default function Products() {
     );
   }
 
+  const handleUpdateImage = async (e, id) => {
+    const token = localStorage.getItem("token");
+    const formData = new FormData();
+    formData.append("image", imageData);
+    e.preventDefault();
+    try {
+      console.log("update starts");
+      const res = await axios.patch(
+        `http://localhost:3000/api/products/${id}`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      console.log("image updated: ", res?.data);
+      setShowModal(false);
+    } catch (e) {
+      console.log("Error updating image: ", e?.response?.data?.error);
+    } finally {
+      setImageData("");
+      getProduct()
+    }
+  };
+
   return (
     <div className="container">
       <div className="row">
         <div className="col-12 mb-3">
-          <button className="btn btn-outline-secondary" onClick={() => navigate("/")}>
+          <button
+            className="btn btn-outline-secondary"
+            onClick={() => navigate("/")}
+          >
             <i className="bi bi-arrow-left me-2"></i>
             Back to Products
           </button>
@@ -77,7 +116,11 @@ export default function Products() {
       </div>
 
       {message && (
-        <div className={`alert ${message.includes('Error') ? 'alert-danger' : 'alert-success'} alert-dismissible fade show`}>
+        <div
+          className={`alert ${
+            message.includes("Error") ? "alert-danger" : "alert-success"
+          } alert-dismissible fade show`}
+        >
           {message}
         </div>
       )}
@@ -107,9 +150,11 @@ export default function Products() {
           <div className="card border-0 shadow-sm h-100">
             <div className="card-body p-4">
               <h1 className="card-title display-5 mb-3">{product.name}</h1>
-              
+
               <div className="mb-4">
-                <span className="text-success display-4 fw-bold">${product.price}</span>
+                <span className="text-success display-4 fw-bold">
+                  Rs {product.price}
+                </span>
               </div>
 
               <div className="mb-4">
@@ -119,18 +164,14 @@ export default function Products() {
                   <div className="col-sm-4">
                     <strong>Product ID:</strong>
                   </div>
-                  <div className="col-sm-8">
-                    {product._id}
-                  </div>
+                  <div className="col-sm-8">{product._id}</div>
                 </div>
                 {product.owner && (
                   <div className="row mt-2">
                     <div className="col-sm-4">
                       <strong>Seller:</strong>
                     </div>
-                    <div className="col-sm-8">
-                      {product.owner}
-                    </div>
+                    <div className="col-sm-8">{product.owner}</div>
                   </div>
                 )}
               </div>
@@ -143,7 +184,10 @@ export default function Products() {
                 >
                   {addingToCart ? (
                     <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                      <span
+                        className="spinner-border spinner-border-sm me-2"
+                        role="status"
+                      ></span>
                       Adding to Cart...
                     </>
                   ) : (
@@ -153,7 +197,7 @@ export default function Products() {
                     </>
                   )}
                 </button>
-                
+
                 <button
                   className="btn btn-outline-primary btn-lg"
                   onClick={() => navigate("/api/products/carts-show/user")}
@@ -161,11 +205,60 @@ export default function Products() {
                   <i className="bi bi-cart me-2"></i>
                   View Cart
                 </button>
+                <button
+                  className="btn btn-outline-secondary"
+                  onClick={() => setShowModal(true)}
+                >
+                  Update Image
+                </button>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {showModal && (
+        <div
+          className="modal fade show"
+          style={{ display: "block" }}
+          tabIndex="-1"
+        >
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h4 className="modal-title">Update Image</h4>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowModal(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <form onSubmit={(e) => handleUpdateImage(e, product._id)}>
+                  <div className="mb-3">
+                    <label htmlFor="image" className="form-label">
+                      Choose Image
+                    </label>
+                    <input
+                      type="file"
+                      className="form-control"
+                      id="image"
+                      onChange={(e) => setImageData(e.target.files[0])}
+                    />
+                  </div>
+                  <button className="btn btn-primary">Update</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {showModal && (
+        <div
+          className="modal-backdrop fade show"
+          onClick={() => setShowModal(false)}
+        ></div>
+      )}
     </div>
   );
 }
