@@ -3,7 +3,9 @@ import { useNavigate, useParams } from "react-router-dom";
 import { api } from "./../../api.js";
 import { API_URL } from "./../../api.js";
 
-export default function Products() {
+export default function Products({ userRoles, user }) {
+  console.log("userRoles: ", userRoles);
+  console.log("id from user: ", user.id);
   const { productsId } = useParams();
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
@@ -116,9 +118,7 @@ export default function Products() {
           <div className="card border-0 shadow-sm">
             {product.image ? (
               <img
-                src={`${API_URL}/ProductsUploads/${
-                  product.image
-                }`}
+                src={`${API_URL}/ProductsUploads/${product.image}`}
                 className="card-img-top"
                 alt={product.name}
                 style={{ height: "400px", objectFit: "cover" }}
@@ -193,12 +193,14 @@ export default function Products() {
                   <i className="bi bi-cart me-2"></i>
                   View Cart
                 </button>
-                <button
-                  className="btn btn-outline-secondary"
-                  onClick={() => setShowModal(true)}
-                >
-                  Update Image
-                </button>
+                {product.owner.toString() === user.id.toString() && (
+                  <button
+                    className="btn btn-outline-secondary"
+                    onClick={() => setShowModal(true)}
+                  >
+                    Update Image
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -234,6 +236,7 @@ export default function Products() {
                       onChange={(e) => setImageData(e.target.files[0])}
                     />
                   </div>
+                  {}
                   <button className="btn btn-primary">Update</button>
                 </form>
               </div>

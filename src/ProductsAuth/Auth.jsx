@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../api";
 
-export default function Auth({ setIsLoggedIn,setUser }) {
+export default function Auth({ setIsLoggedIn,setUser,setUserRoles }) {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     username: "",
@@ -27,21 +27,27 @@ export default function Auth({ setIsLoggedIn,setUser }) {
       const data = isLogin
         ? { email: formData.email, password: formData.password }
         : formData;
-      console.log("login starts");
+      console.log("login starts: ", data);
       const res = await api.post(endpoint, data);
       console.log(
         "Login successful, cookie set by server: ",
         res?.data?.user
       );
+      setUserRoles(res?.data?.user?.roles)
       setUser(res?.data?.user);
       setIsLoggedIn(true);
       navigate("/");
     } catch (err) {
+      console.log("auth error: ", error?.response)
       setError(
         err.response?.data?.message ||
           err.message ||
           `${isLogin ? "Login" : "Registration"} failed`
       );
+      if(err.response?.status===403){
+        setIsLogin("Login")
+        setError("Already registered")
+      }
       setIsLoggedIn(false);
     } finally {
       setLoading(false);

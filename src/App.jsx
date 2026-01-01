@@ -12,6 +12,7 @@ import { api } from "./api.js";
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState({});
+  const [userRoles, setUserRoles] = useState("");
   // const [authChecked, setAuthChecked] = useState(false);
   const checkAuth = async () => {
     try {
@@ -26,9 +27,7 @@ function App() {
     }
   };
   useEffect(() => {
-    if (isLoggedIn) {
-      checkAuth();
-    }
+    checkAuth();
   }, []);
 
   return (
@@ -47,13 +46,18 @@ function App() {
                 isLoggedIn={isLoggedIn}
                 setIsLoggedIn={setIsLoggedIn}
                 setUser={setUser}
+                userRoles={userRoles}
+                setUserRoles={setUserRoles}
               />
             }
           />
           <Route path="/" element={<AllProducts />} />
           <Route path="/products" element={<AllProducts />} />
           <Route path="/products/new" element={<NewProducts />} />
-          <Route path="/products/:productsId" element={<Products />} />
+          <Route
+            path="/products/:productsId"
+            element={<Products userRoles={userRoles} user={user} />}
+          />
           <Route path="/products/:productsId/edit" element={<EditProducts />} />
           <Route
             path="/products/carts-show/:usersId"
