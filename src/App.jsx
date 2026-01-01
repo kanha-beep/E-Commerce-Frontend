@@ -25,9 +25,11 @@ function App() {
       setUser({});
     }
   };
-  if (isLoggedIn) {
-    checkAuth();
-  }
+  useEffect(() => {
+    if (isLoggedIn) {
+      checkAuth();
+    }
+  }, []);
 
   return (
     <div className="min-vh-100 bg-light">
