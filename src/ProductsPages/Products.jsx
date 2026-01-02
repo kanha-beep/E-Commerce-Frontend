@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "./../../api.js";
-import { API_URL } from "./../../api.js";
 export default function Products({ userRoles, user }) {
   const [rating, setRating] = useState(0);
   console.log("userRoles: ", userRoles);
@@ -10,6 +9,7 @@ export default function Products({ userRoles, user }) {
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [productLoader, setProductLoader] = useState(true)
   const [addingToCart, setAddingToCart] = useState(false);
   const [message, setMessage] = useState("");
   const [showModal, setShowModal] = useState(false);
@@ -17,6 +17,7 @@ export default function Products({ userRoles, user }) {
   const [comment, setComment] = useState("");
   const [reviewsList, setReviewsList] = useState([]);
   const getProduct = async () => {
+    setProductLoader(true)
     try {
       const res = await api.get(`/api/products/${productsId}`);
       setProduct(res.data);
@@ -24,7 +25,7 @@ export default function Products({ userRoles, user }) {
       console.log("Error fetching product:", e?.response?.data?.message);
       console.log("error: ", e);
     } finally {
-      setLoading(false);
+      setProductLoader(false);
     }
   };
   const getReviews = async () => {
@@ -67,7 +68,7 @@ export default function Products({ userRoles, user }) {
     getReviews();
   }, [productsId]);
 
-  if (loading) {
+  if (productLoader) {
     return (
       <div
         className="d-flex justify-content-center align-items-center"
