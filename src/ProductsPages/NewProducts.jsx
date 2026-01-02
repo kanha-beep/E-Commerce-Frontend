@@ -52,11 +52,7 @@ export default function NewProducts() {
         image: image,
       });
 
-      const res = await api.post("/api/products/new", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      const res = await api.post("/api/products/new", formData);
       console.log("Product added successfully:", res.data);
       navigate("/");
     } catch (e) {
