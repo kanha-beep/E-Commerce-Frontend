@@ -2,18 +2,20 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "./../../api.js";
 import { API_URL } from "./../../api.js";
-
 export default function Products({ userRoles, user }) {
+  const [rating, setRating] = useState(0);
   console.log("userRoles: ", userRoles);
   console.log("id from user: ", user.id);
   const { productsId } = useParams();
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [addingToCart, setAddingToCart] = useState(false);
   const [message, setMessage] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [imageData, setImageData] = useState("");
+  const [comment, setComment] = useState("");
+  const [reviewsList, setReviewsList] = useState([]);
   const getProduct = async () => {
     try {
       const res = await api.get(`/api/products/${productsId}`);
@@ -24,6 +26,11 @@ export default function Products({ userRoles, user }) {
     } finally {
       setLoading(false);
     }
+  };
+  const getReviews = async () => {
+    const res = await api.get(`/api/products/${productsId}/review`);
+    setReviewsList(res?.data);
+    console.log("got reviews: ", res?.data);
   };
 
   const addToCart = async () => {
@@ -50,6 +57,7 @@ export default function Products({ userRoles, user }) {
 
   useEffect(() => {
     getProduct();
+    getReviews();
   }, [productsId]);
 
   if (loading) {
@@ -107,6 +115,39 @@ export default function Products({ userRoles, user }) {
       console.log("error: ", e?.response?.data?.error);
     }
   };
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    const data = {
+      comment,
+      rating,
+    };
+    try {
+      const res = await api.post(`/api/products/${productsId}/review`, data);
+      console.log("review posted: ", res?.data);
+    } catch (e) {
+      console.log("error: ", e?.response?.data?.error);
+    } finally {
+      getProduct();
+      setComment("");
+      setRating("");
+      getReviews();
+      setLoading(false);
+    }
+  };
+  console.log("ratings: ", rating, "comments: ", comment);
+  console.log("reviews: ", reviewsList);
+  const handleReviewDelete = async (id) => {
+    setLoading(true);
+    try {
+      await api.delete(`/api/products/${productsId}/review/${id}`);
+    } catch (e) {
+      console.log("error: ", e?.response?.data?.error);
+    } finally {
+      getReviews();
+      setLoading(false);
+    }
+  };
   return (
     <div className="container">
       <div className="row">
@@ -132,6 +173,7 @@ export default function Products({ userRoles, user }) {
       )}
 
       <div className="row">
+        {/* left side div for image */}
         <div className="col-lg-6 mb-4">
           <div className="card border-0 shadow-sm">
             {product.image ? (
@@ -139,7 +181,7 @@ export default function Products({ userRoles, user }) {
                 src={product.image}
                 className="card-img-top"
                 alt={product.name}
-                style={{ height: "400px", objectFit: "cover" }}
+                style={{ height: "450px", objectFit: "cover" }}
               />
             ) : (
               <div
@@ -151,9 +193,9 @@ export default function Products({ userRoles, user }) {
             )}
           </div>
         </div>
-
+        {/* right div */}
         <div className="col-lg-6">
-          <div className="card border-0 shadow-sm h-100">
+          <div className="card border-0 shadow-sm">
             <div className="card-body p-4">
               <h1 className="card-title display-5 mb-3">{product.name}</h1>
 
@@ -166,12 +208,14 @@ export default function Products({ userRoles, user }) {
               <div className="mb-4">
                 <h5 className="text-muted">Product Details</h5>
                 <hr />
+                {/* id */}
                 <div className="row">
                   <div className="col-sm-4">
                     <strong>Product ID:</strong>
                   </div>
                   <div className="col-sm-8">{product._id}</div>
                 </div>
+                {/* seller */}
                 {product.owner && (
                   <div className="row mt-2">
                     <div className="col-sm-4">
@@ -181,7 +225,7 @@ export default function Products({ userRoles, user }) {
                   </div>
                 )}
               </div>
-
+              {/* buttons */}
               <div className="d-grid gap-2">
                 <button
                   className="btn btn-primary btn-lg"
@@ -231,6 +275,100 @@ export default function Products({ userRoles, user }) {
             </div>
           </div>
         </div>
+      </div>
+      <div className="row">
+        <div className="col-12 mt-4">
+          <h3 className="mb-3">Reviews</h3>
+          <p>{product.description}</p>
+        </div>
+        <div className="col-12 col-lg-5 mt-4 mx-auto">
+          <form className="card p-3" onSubmit={handleReviewSubmit}>
+            <div className="card-head">
+              <h3 className="mb-3">Form</h3>
+            </div>
+            <div className="mb-3 d-flex">
+              <label htmlFor="name" className="form-label mt-2">
+                Enter
+              </label>
+              <input
+                placeholder="Enter Review"
+                name="comment"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                className="ms-4 form-control"
+              />
+            </div>
+            <div className="mb-3 d-flex">
+              <label htmlFor="name" className="form-label mt-2">
+                Rating
+              </label>
+              {[1, 2, 3, 4, 5].map((i) => (
+                <i
+                  key={i}
+                  className={`bi ${
+                    i <= rating ? "bi-star-fill" : "bi-star"
+                  } text-warning fs-4 me-1 ms-3`}
+                  style={{ cursor: "pointer" }}
+                  onClick={() => setRating(i)}
+                />
+              ))}
+            </div>
+            <button type="submit" className="btn btn-outline-success">
+              {loading ? (
+                <>
+                  <span
+                    role="status"
+                    className="spinner-border spinner-border-sm me-2"
+                  ></span>{" "}
+                  Submitting...
+                </>
+              ) : (
+                "Submit"
+              )}
+            </button>
+          </form>
+        </div>
+      </div>
+      <div className="col-12 col-lg-3 mt-4">
+        <h3 className="mb-3">All Reviews</h3>
+        {reviewsList?.length > 0 &&
+          reviewsList?.map((review) => (
+            <div className="card p-3 mb-3" key={review?._id}>
+              <div className="card-header h4">
+                By : {review?.owner?.username}
+              </div>
+              <div className="card-body">
+                <h5 className="card-title">Comment: {review?.comment}</h5>
+                <p className="card-text">
+                  {review?.rating}{" "}
+                  <i className="bi bi-star-fill text-warning"></i>
+                </p>
+              </div>
+              <div className="d-flex justify-content-evenly">
+                {review?.owner?._id?.toString() === user?.id?.toString() && (
+                  <button
+                    className="btn btn-outline-danger"
+                    onClick={() => handleReviewDelete(review?._id)}
+                  >
+                    {loading ? (
+                      <>
+                        <span
+                          role="status"
+                          className="spinner-border spinner-border-sm me-2"
+                        ></span>{" "}
+                        Deleting
+                      </>
+                    ) : (
+                      <i className="bi bi-trash"></i>
+                    )}
+                  </button>
+                )}
+                {review?.owner?._id?.toString() === user?.id?.toString() && (
+                  <button className="btn btn-outline-secondary">Edit</button>
+                )}
+              </div>
+            </div>
+          ))}
       </div>
 
       {showModal && (

@@ -8,10 +8,10 @@ body {
   transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 
-.card:hover {
+/* .card:hover {
   transform: translateY(-5px);
   box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
-}
+} */
 
 /* Navbar styling */
 .navbar-brand {
