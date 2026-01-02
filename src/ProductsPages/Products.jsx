@@ -133,7 +133,17 @@ export default function Products({ userRoles, user }) {
       const res = await api.post(`/api/products/${productsId}/review`, data);
       console.log("review posted: ", res?.data);
     } catch (e) {
-      console.log("error: ", e?.response?.data?.error);
+      console.log("GO: ", e?.response?.data?.error);
+      if (e?.status === 401) {
+        setMessage(e?.response?.data?.error);
+        setTimeout(
+          () =>
+            navigate("/auth", {
+              state: { reviewUrl: `/products/${productsId}` },
+            }),
+          2000
+        );
+      }
     } finally {
       getProduct();
       setComment("");

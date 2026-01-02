@@ -27,9 +27,10 @@ export default function Auth({
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
   useEffect(() => {
-    if (location?.state?.url && isLoggedIn) {
-      navigate(location.state.url, { replace: true });
-    }
+    if (location?.state?.url && isLoggedIn)
+      return navigate(location.state.url, { replace: true });
+    if (location?.state?.reviewUrl && isLoggedIn)
+      return navigate(location?.state?.reviewUrl, { replace: true });
   }, [isLoggedIn, location?.state]);
 
   const handleSubmit = async (e) => {
