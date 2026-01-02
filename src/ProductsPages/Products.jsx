@@ -9,7 +9,7 @@ export default function Products({ userRoles, user }) {
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [productLoader, setProductLoader] = useState(true)
+  const [productLoader, setProductLoader] = useState(true);
   const [addingToCart, setAddingToCart] = useState(false);
   const [message, setMessage] = useState("");
   const [showModal, setShowModal] = useState(false);
@@ -17,7 +17,7 @@ export default function Products({ userRoles, user }) {
   const [comment, setComment] = useState("");
   const [reviewsList, setReviewsList] = useState([]);
   const getProduct = async () => {
-    setProductLoader(true)
+    setProductLoader(true);
     try {
       const res = await api.get(`/api/products/${productsId}`);
       setProduct(res.data);
@@ -199,12 +199,12 @@ export default function Products({ userRoles, user }) {
                 src={product.image}
                 className="card-img-top"
                 alt={product.name}
-                style={{ height: "450px", objectFit: "cover" }}
+                style={{ height: "34rem", objectFit: "cover" }}
               />
             ) : (
               <div
                 className="card-img-top d-flex align-items-center justify-content-center bg-light"
-                style={{ height: "400px" }}
+                style={{ height: "30rem" }}
               >
                 <i className="bi bi-image display-1 text-muted"></i>
               </div>
@@ -295,14 +295,14 @@ export default function Products({ userRoles, user }) {
         </div>
       </div>
       <div className="row">
-        <div className="col-12 mt-4">
+        {/* <div className="col-12 mt-4">
           <h3 className="mb-3">Reviews</h3>
           <p>{product.description}</p>
-        </div>
+        </div> */}
         <div className="col-12 col-lg-5 mt-4 mx-auto">
           <form className="card p-3" onSubmit={handleReviewSubmit}>
             <div className="card-head">
-              <h3 className="mb-3">Form</h3>
+              <h3 className="mb-3">Review</h3>
             </div>
             <div className="mb-3 d-flex">
               <label htmlFor="name" className="form-label mt-2">
@@ -348,44 +348,46 @@ export default function Products({ userRoles, user }) {
         </div>
       </div>
       <div className="col-12 col-lg-3 mt-4">
-        <h3 className="mb-3">All Reviews</h3>
         {reviewsList?.length > 0 &&
           reviewsList?.map((review) => (
-            <div className="card p-3 mb-3" key={review?._id}>
-              <div className="card-header h4">
-                By : {review?.owner?.username}
+            <>
+              <h3 className="mb-3">Customer Reviews</h3>
+              <div className="card p-3 mb-3" key={review?._id}>
+                <div className="card-header h4">
+                  By : {review?.owner?.username}
+                </div>
+                <div className="card-body">
+                  <h5 className="card-title">Comment: {review?.comment}</h5>
+                  <p className="card-text">
+                    {review?.rating}{" "}
+                    <i className="bi bi-star-fill text-warning"></i>
+                  </p>
+                </div>
+                <div className="d-flex justify-content-evenly">
+                  {review?.owner?._id?.toString() === user?.id?.toString() && (
+                    <button
+                      className="btn btn-outline-danger"
+                      onClick={() => handleReviewDelete(review?._id)}
+                    >
+                      {loading ? (
+                        <>
+                          <span
+                            role="status"
+                            className="spinner-border spinner-border-sm me-2"
+                          ></span>{" "}
+                          Deleting
+                        </>
+                      ) : (
+                        <i className="bi bi-trash"></i>
+                      )}
+                    </button>
+                  )}
+                  {review?.owner?._id?.toString() === user?.id?.toString() && (
+                    <button className="btn btn-outline-secondary">Edit</button>
+                  )}
+                </div>
               </div>
-              <div className="card-body">
-                <h5 className="card-title">Comment: {review?.comment}</h5>
-                <p className="card-text">
-                  {review?.rating}{" "}
-                  <i className="bi bi-star-fill text-warning"></i>
-                </p>
-              </div>
-              <div className="d-flex justify-content-evenly">
-                {review?.owner?._id?.toString() === user?.id?.toString() && (
-                  <button
-                    className="btn btn-outline-danger"
-                    onClick={() => handleReviewDelete(review?._id)}
-                  >
-                    {loading ? (
-                      <>
-                        <span
-                          role="status"
-                          className="spinner-border spinner-border-sm me-2"
-                        ></span>{" "}
-                        Deleting
-                      </>
-                    ) : (
-                      <i className="bi bi-trash"></i>
-                    )}
-                  </button>
-                )}
-                {review?.owner?._id?.toString() === user?.id?.toString() && (
-                  <button className="btn btn-outline-secondary">Edit</button>
-                )}
-              </div>
-            </div>
+            </>
           ))}
       </div>
 
