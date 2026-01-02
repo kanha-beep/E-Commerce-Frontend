@@ -76,6 +76,7 @@ export default function Products({ userRoles, user }) {
     const formData = new FormData();
     formData.append("image", imageData);
     e.preventDefault();
+    setLoading(true);
     try {
       console.log("update starts");
       const res = await api.patch(`/api/products/${id}`, formData);
@@ -86,6 +87,7 @@ export default function Products({ userRoles, user }) {
     } finally {
       setImageData("");
       getProduct();
+      setLoading(false);
     }
   };
 
@@ -118,7 +120,7 @@ export default function Products({ userRoles, user }) {
           <div className="card border-0 shadow-sm">
             {product.image ? (
               <img
-                src={`${API_URL}/ProductsUploads/${product.image}`}
+                src={product.image}
                 className="card-img-top"
                 alt={product.name}
                 style={{ height: "400px", objectFit: "cover" }}
@@ -236,8 +238,10 @@ export default function Products({ userRoles, user }) {
                       onChange={(e) => setImageData(e.target.files[0])}
                     />
                   </div>
-                  {}
-                  <button className="btn btn-primary">Update</button>
+
+                  <button className="btn btn-primary">
+                    {loading ? "Updating..." : "Update"}
+                  </button>
                 </form>
               </div>
             </div>

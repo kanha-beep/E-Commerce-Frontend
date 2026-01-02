@@ -75,7 +75,7 @@ export default function AllProducts() {
                 <div className="position-relative">
                   {product.image ? (
                     <img
-                      src={`${API_URL}/ProductsUploads/${product.image}`}
+                      src={product.image}
                       className="card-img-top"
                       alt={product.name}
                       style={{ height: "250px", objectFit: "cover" }}

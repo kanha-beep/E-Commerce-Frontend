@@ -49,21 +49,18 @@ export default function NewProducts() {
         name: data.name,
         price: data.price,
         hasImage: !!image,
+        image: image,
       });
 
-      const res = await api.post(
-        "/api/products/new",
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      const res = await api.post("/api/products/new", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
       console.log("Product added successfully:", res.data);
       navigate("/");
     } catch (e) {
-      console.error("Error adding product:", e);
+      console.error("Error adding product:", e?.response?.data?.error);
       setError(e.response?.data?.message || "Error adding product");
     } finally {
       setLoading(false);
