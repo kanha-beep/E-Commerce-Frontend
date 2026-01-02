@@ -1,8 +1,18 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { api } from "../../api";
+import { useEffect } from "react";
 
-export default function Auth({ setIsLoggedIn,setUser,setUserRoles }) {
+export default function Auth({
+  setIsLoggedIn,
+  isLoggedIn,
+  setUser,
+  setUserRoles,
+}) {
+  const location = useLocation();
+  console.log("location from cart: ", location?.state);
+
+  // const goToUrl = location?.state?.url;
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     username: "",
@@ -16,6 +26,11 @@ export default function Auth({ setIsLoggedIn,setUser,setUserRoles }) {
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+  useEffect(() => {
+    if (location?.state?.url && isLoggedIn) {
+      navigate(location.state.url, { replace: true });
+    }
+  }, [isLoggedIn, location?.state]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,30 +38,29 @@ export default function Auth({ setIsLoggedIn,setUser,setUserRoles }) {
     setError("");
 
     try {
+      // if (location?.state?.url) return navigate(location?.state?.url);
+
       const endpoint = isLogin ? "/api/auth/login" : "/api/auth/register";
       const data = isLogin
         ? { email: formData.email, password: formData.password }
         : formData;
       console.log("login starts: ", data);
       const res = await api.post(endpoint, data);
-      console.log(
-        "Login successful, cookie set by server: ",
-        res?.data?.user
-      );
-      setUserRoles(res?.data?.user?.roles)
+      console.log("Login successful, cookie set by server: ", res?.data?.user);
+      setUserRoles(res?.data?.user?.roles);
       setUser(res?.data?.user);
       setIsLoggedIn(true);
-      navigate("/");
+      return navigate("/");
     } catch (err) {
-      console.log("auth error: ", error?.response)
+      console.log("auth error: ", error?.response);
       setError(
         err.response?.data?.message ||
           err.message ||
           `${isLogin ? "Login" : "Registration"} failed`
       );
-      if(err.response?.status===403){
-        setIsLogin("Login")
-        setError("Already registered")
+      if (err.response?.status === 403) {
+        setIsLogin("Login");
+        setError("Already registered");
       }
       setIsLoggedIn(false);
     } finally {

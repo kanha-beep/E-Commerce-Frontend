@@ -36,7 +36,13 @@ export default function Products({ userRoles, user }) {
     } catch (e) {
       console.log("error: ", e?.response?.data?.error);
       setMessage(e.response?.data?.error || "Error adding to cart");
-      setTimeout(() => setMessage(""), 3000);
+      setTimeout(
+        () =>
+          navigate("/auth", {
+            state: { url: `/products/${productsId}` },
+          }),
+        2000
+      );
     } finally {
       setAddingToCart(false);
     }
