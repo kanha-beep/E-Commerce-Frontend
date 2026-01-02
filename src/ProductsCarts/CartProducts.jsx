@@ -105,7 +105,7 @@ export default function CartProducts() {
                       <div className="col-md-2">
                         {product.image ? (
                           <img
-                            src={`${API_URL}/ProductsUploads/${product.image}`}
+                            src={product.image}
                             alt={product.name}
                             className="img-fluid rounded"
                             style={{
