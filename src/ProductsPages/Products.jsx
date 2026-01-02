@@ -90,7 +90,17 @@ export default function Products({ userRoles, user }) {
       setLoading(false);
     }
   };
+  const handleDelete = async () => {
+    try {
+      const res = await api.delete(`/api/products/${productsId}`);
+      console.log("deleted: ", res?.data);
 
+      navigate("/products");
+    } catch (e) {
+      alert(e?.response?.data?.error);
+      console.log("error: ", e?.response?.data?.error);
+    }
+  };
   return (
     <div className="container">
       <div className="row">
@@ -201,6 +211,14 @@ export default function Products({ userRoles, user }) {
                     onClick={() => setShowModal(true)}
                   >
                     Update Image
+                  </button>
+                )}
+                {product?.owner?.toString() === user?.id?.toString() && (
+                  <button
+                    className="btn btn-outline-danger"
+                    onClick={handleDelete}
+                  >
+                    Delete Product
                   </button>
                 )}
               </div>
