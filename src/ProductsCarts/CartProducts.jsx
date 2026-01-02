@@ -7,7 +7,7 @@ export default function CartProducts() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
-
+  const [deleteFromCart, setDeleteFromCart] = useState(false);
   const getCartProducts = async () => {
     try {
       console.log("getting cart details");
@@ -45,12 +45,14 @@ export default function CartProducts() {
     );
   }
   const handleCartDelete = async (id) => {
+    setDeleteFromCart(true);
     try {
       await api.delete(`/api/products/cart-details/${id}`);
     } catch (e) {
       console.log("Error deleting cart item: ", e?.response?.data);
     } finally {
       getCartProducts();
+      setDeleteFromCart(false);
     }
   };
   return (
@@ -133,11 +135,22 @@ export default function CartProducts() {
                         </span>
                       </div>
                       <div className="col-md-2 text-end">
-                        <button className="btn btn-sm btn-outline-danger">
-                          <i
-                            className="bi bi-trash"
-                            onClick={() => handleCartDelete(product._id)}
-                          ></i>
+                        <button
+                          className="btn btn-sm btn-outline-danger"
+                          onClick={() => handleCartDelete(product._id)}
+                          disabled={deleteFromCart}
+                        >
+                          {deleteFromCart ? (
+                            <>
+                              <span
+                                className="spinner-border spinner-border-sm me-2"
+                                role="status"
+                              ></span>
+                              Deleting...
+                            </>
+                          ) : (
+                            <i className="bi bi-trash"></i>
+                          )}
                         </button>
                       </div>
                     </div>
