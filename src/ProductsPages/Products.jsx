@@ -28,9 +28,16 @@ export default function Products({ userRoles, user }) {
     }
   };
   const getReviews = async () => {
-    const res = await api.get(`/api/products/${productsId}/review`);
-    setReviewsList(res?.data);
-    console.log("got reviews: ", res?.data);
+    try {
+      const res = await api.get(`/api/products/${productsId}/review`);
+      setReviewsList(res?.data);
+      console.log("got reviews: ", res?.data);
+    } catch (e) {
+      console.log("Error fetching reviews:", e?.response?.data?.message);
+      console.log("error: ", e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const addToCart = async () => {
