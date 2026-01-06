@@ -17,6 +17,14 @@ export default function Products({ userRoles, user }) {
   const [imageData, setImageData] = useState("");
   const [comment, setComment] = useState("");
   const [reviewsList, setReviewsList] = useState([]);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingReview, setEditingReview] = useState(null);
+  const [editForm, setEditForm] = useState({
+    comment: "",
+    rating: 1,
+  });
+  const [editLoading, setEditLoading] = useState(false);
+
   const getProduct = async () => {
     setProductLoader(true);
     try {
@@ -167,6 +175,34 @@ export default function Products({ userRoles, user }) {
       setLoading(false);
     }
   };
+  const openEditModal = (review) => {
+    setEditingReview(review);
+    setEditForm({
+      comment: review.comment,
+      rating: review.rating,
+    });
+    setShowEditModal(true);
+  };
+
+  const handleReviewUpdate = async () => {
+    if (!editingReview) return;
+
+    try {
+      setEditLoading(true);
+      await api.patch(
+        `/api/products/${editingReview.product}/review/${editingReview._id}`,
+        editForm
+      );
+      setShowEditModal(false);
+      // getProduct(); // refetch reviews
+      getReviews()
+    } catch (e) {
+      console.log("Review update error:", e?.response?.data);
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
   return (
     <div className="container">
       <div className="row">
@@ -384,7 +420,12 @@ export default function Products({ userRoles, user }) {
                     </button>
                   )}
                   {review?.owner?._id?.toString() === user?.id?.toString() && (
-                    <button className="btn btn-outline-secondary">Edit</button>
+                    <button
+                      className="btn btn-outline-secondary"
+                      onClick={() => openEditModal(review)}
+                    >
+                      <i className="bi bi-pencil"></i>
+                    </button>
                   )}
                 </div>
               </div>
@@ -437,6 +478,82 @@ export default function Products({ userRoles, user }) {
           onClick={() => setShowModal(false)}
         ></div>
       )}
+      {showEditModal && (
+        <div className="modal fade show d-block" tabIndex="-1">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Edit Review</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowEditModal(false)}
+                ></button>
+              </div>
+
+              <div className="modal-body">
+                {/* COMMENT */}
+                <div className="mb-3">
+                  <label className="form-label">Comment</label>
+                  <textarea
+                    className="form-control"
+                    rows="3"
+                    value={editForm.comment}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, comment: e.target.value })
+                    }
+                  />
+                </div>
+
+                {/* RATING */}
+                <div className="mb-3">
+                  <label className="form-label">Rating</label>
+                  <select
+                    className="form-select"
+                    value={editForm.rating}
+                    onChange={(e) =>
+                      setEditForm({
+                        ...editForm,
+                        rating: Number(e.target.value),
+                      })
+                    }
+                  >
+                    {[1, 2, 3, 4, 5].map((r) => (
+                      <option key={r} value={r}>
+                        {r} ⭐
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => setShowEditModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="btn btn-primary"
+                  onClick={handleReviewUpdate}
+                  disabled={editLoading}
+                >
+                  {editLoading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2"></span>
+                      Updating
+                    </>
+                  ) : (
+                    "Update Review"
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* <div className="modal-backdrop fade show"></div> */}
     </div>
   );
 }

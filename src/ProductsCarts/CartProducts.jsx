@@ -8,18 +8,45 @@ export default function CartProducts() {
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [deleteFromCart, setDeleteFromCart] = useState(false);
+  // const getCartProducts = async () => {
+  //   try {
+  //     console.log("getting cart details");
+  //     const res = await api.get("/api/products/cart-details");
+  //     console.log("got products: ", res?.data);
+  //     // console.log(
+  //     //   "quantity: ",
+  //     //   res?.data?.products?.quantity
+  //     // );
+  //     // console.log(
+  //     //   "product price:",
+  //     //   res?.data?.products?.price
+  //     // );
+  //     const cartProducts = res.data || [];
+  //     setProducts(cartProducts);
+
+  //     // Calculate total
+  //     const totalPrice = cartProducts.reduce((sum, product) => {
+  //       return sum + parseFloat(product.price || 0);
+  //     }, 0);
+  //     setTotal(totalPrice);
+  //   } catch (e) {
+  //     console.log("Error fetching cart:", e?.response?.data?.error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
   const getCartProducts = async () => {
     try {
-      console.log("getting cart details");
+      setLoading(true);
       const res = await api.get("/api/products/cart-details");
-      console.log("got card products: ", res?.data);
-      const cartProducts = res.data.products || [];
+
+      const cartProducts = res?.data || [];
       setProducts(cartProducts);
 
-      // Calculate total
-      const totalPrice = cartProducts.reduce((sum, product) => {
-        return sum + parseFloat(product.price || 0);
-      }, 0);
+      const totalPrice = cartProducts.reduce(
+        (sum, p) => sum + p.price * p.quantity,
+        0
+      );
       setTotal(totalPrice);
     } catch (e) {
       console.log("Error fetching cart:", e?.response?.data?.error);
@@ -47,7 +74,7 @@ export default function CartProducts() {
   const handleCartDelete = async (id) => {
     setDeleteFromCart(true);
     try {
-      await api.delete(`/api/products/cart-details/${id}`);
+      await api.delete(`/api/products/cart/${id}`);
     } catch (e) {
       console.log("Error deleting cart item: ", e?.response?.data);
     } finally {
@@ -99,58 +126,49 @@ export default function CartProducts() {
                 {products.map((product, index) => (
                   <div
                     key={product._id}
-                    className={`p-4 ${
+                    className={`p-3 ${
                       index !== products.length - 1 ? "border-bottom" : ""
                     }`}
                   >
                     <div className="row align-items-center">
-                      <div className="col-md-2">
-                        {product.image ? (
-                          <img
-                            src={product.image}
-                            alt={product.name}
-                            className="img-fluid rounded"
-                            style={{
-                              height: "80px",
-                              width: "80px",
-                              objectFit: "cover",
-                            }}
-                          />
-                        ) : (
-                          <div
-                            className="d-flex align-items-center justify-content-center bg-light rounded"
-                            style={{ height: "80px", width: "80px" }}
-                          >
-                            <i className="bi bi-image text-muted"></i>
-                          </div>
-                        )}
-                      </div>
-                      <div className="col-md-6">
-                        <h6 className="mb-1">{product.name}</h6>
-                        <small className="text-muted">ID: {product._id}</small>
-                      </div>
+                      {/* IMAGE */}
                       <div className="col-md-2 text-center">
-                        <span className="fw-bold text-success">
-                          Rs {product.price}
+                        <img
+                          src={product.image || "/placeholder.png"}
+                          alt={product.name}
+                          className="img-fluid rounded"
+                          style={{ height: "90px", objectFit: "cover" }}
+                        />
+                      </div>
+
+                      {/* NAME */}
+                      <div className="col-md-4">
+                        <h6 className="mb-1">{product.name}</h6>
+                        <small className="text-muted">
+                          Price: Rs {product.price}
+                        </small>
+                      </div>
+
+                      {/* QUANTITY */}
+                      <div className="col-md-2 text-center">
+                        <span className="badge bg-secondary px-3 py-2">
+                          Qty: {product.quantity}
                         </span>
                       </div>
+
+                      {/* SUBTOTAL */}
+                      <div className="col-md-2 text-center fw-bold text-success">
+                        Rs {product.price * product.quantity}
+                      </div>
+
+                      {/* DELETE */}
                       <div className="col-md-2 text-end">
                         <button
                           className="btn btn-sm btn-outline-danger"
-                          onClick={() => handleCartDelete(product._id)}
+                          onClick={() => handleCartDelete(product.id)}
                           disabled={deleteFromCart}
                         >
-                          {deleteFromCart ? (
-                            <>
-                              <span
-                                className="spinner-border spinner-border-sm me-2"
-                                role="status"
-                              ></span>
-                              Deleting...
-                            </>
-                          ) : (
-                            <i className="bi bi-trash"></i>
-                          )}
+                          <i className="bi bi-trash"></i>
                         </button>
                       </div>
                     </div>
