@@ -7,7 +7,7 @@ import EditProducts from "./ProductsPages/EditProducts.jsx";
 import Navbar from "./ProductsPages/Navbar.jsx";
 import CartProducts from "./ProductsCarts/CartProducts.jsx";
 import { useState, useEffect } from "react";
-import { api } from "./api.js";
+import { api } from "../../api.js";
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);

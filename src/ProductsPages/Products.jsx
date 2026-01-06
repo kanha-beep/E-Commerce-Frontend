@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { api } from "./../../api.js";
+import { api } from "../../api";
+
 export default function Products({ userRoles, user }) {
   const [rating, setRating] = useState(0);
   console.log("userRoles: ", userRoles);
