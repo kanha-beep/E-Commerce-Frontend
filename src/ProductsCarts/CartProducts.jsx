@@ -82,6 +82,25 @@ export default function CartProducts() {
       setDeleteFromCart(false);
     }
   };
+  const handlePayment = async () => {
+    const res = await api.post("/api/products/create-order");
+
+    const options = {
+      key: "rzp_test_xxxxx",
+      amount: res.data.amount,
+      currency: "INR",
+      order_id: res.data.id,
+      name: "My Shop",
+      description: "Test Payment",
+      handler: function (response) {
+        console.log("Payment success:", response);
+      },
+    };
+
+    const rzp = new window.Razorpay(options);
+    rzp.open();
+  };
+
   return (
     <div className="container">
       <div className="row mb-4">
@@ -200,7 +219,10 @@ export default function CartProducts() {
                   </span>
                 </div>
                 <div className="d-grid">
-                  <button className="btn btn-success btn-lg">
+                  <button
+                    onClick={handlePayment}
+                    className="btn btn-success btn-lg"
+                  >
                     <i className="bi bi-credit-card me-2"></i>
                     Proceed to Checkout
                   </button>
