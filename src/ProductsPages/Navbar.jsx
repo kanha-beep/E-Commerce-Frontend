@@ -18,7 +18,7 @@ export default function Navbar({ isLoggedIn, setIsLoggedIn, user }) {
       <div className="container">
         <Link className="navbar-brand fw-bold" to="/">
           <i className="bi bi-shop me-2"></i>
-          Amazon Store
+          Kanha's Store
         </Link>
 
         <button

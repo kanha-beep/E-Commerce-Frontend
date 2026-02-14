@@ -72,7 +72,13 @@ export default function AllProducts() {
           {products.map((product) => (
             <div key={product._id} className="col-lg-4 col-md-6 col-sm-12">
               <div className="card h-100 shadow-sm border-0">
-                <div className="position-relative">
+                <div
+                  style={{
+                    height: "250px",
+                    position: "relative",
+                    overflow: "hidden",
+                  }}
+                >
                   {product.image ? (
                     <img
                       src={product.image}
