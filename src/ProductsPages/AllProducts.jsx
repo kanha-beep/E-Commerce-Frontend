@@ -16,7 +16,7 @@ import { SECTION_BLURBS, SECTION_OPTIONS } from "./listingConfig.js";
 
 export default function AllProducts({ isLoggedIn, user }) {
   const navigate = useNavigate();
-  const [products, setProducts] = useState([]);
+  const [allProducts, setAllProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
   const [activeSection, setActiveSection] = useState("all");
@@ -24,30 +24,48 @@ export default function AllProducts({ isLoggedIn, user }) {
   useEffect(() => {
     const getAllProducts = async () => {
       try {
-        const params = {};
-        if (activeSection !== "all") params.section = activeSection;
-        if (query.trim()) params.search = query.trim();
-
-        const res = await api.get("/api/products", { params });
-        setProducts(Array.isArray(res.data) ? res.data : []);
+        const res = await api.get("/api/products");
+        setAllProducts(Array.isArray(res.data) ? res.data : []);
       } catch {
-        setProducts([]);
+        setAllProducts([]);
       } finally {
         setLoading(false);
       }
     };
 
-    setLoading(true);
     getAllProducts();
-  }, [activeSection, query]);
+  }, []);
+
+  const products = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+
+    return allProducts.filter((product) => {
+      const matchesSection =
+        activeSection === "all" || product.section === activeSection;
+
+      if (!matchesSection) return false;
+      if (!normalizedQuery) return true;
+
+      return [
+        product.name,
+        product.brand,
+        product.category,
+        product.description,
+        product.shortDescription,
+        product.owner?.username,
+      ]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(normalizedQuery));
+    });
+  }, [activeSection, allProducts, query]);
 
   const sections = useMemo(
     () =>
       SECTION_OPTIONS.filter((section) => section.value !== "all").map((section) => ({
         ...section,
-        products: products.filter((product) => product.section === section.value),
+        products: allProducts.filter((product) => product.section === section.value),
       })),
-    [products]
+    [allProducts]
   );
 
   const spotlight = products.slice(0, 4);
