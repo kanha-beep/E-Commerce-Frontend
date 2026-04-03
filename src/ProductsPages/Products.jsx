@@ -1,559 +1,576 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { api } from "../../api";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { api } from "../../api.js";
+import CustomizationStudio from "./CustomizationStudio.jsx";
+import {
+  AccentButton,
+  InlineAlert,
+  LoadingState,
+  PageHero,
+  Panel,
+  PrimaryButton,
+  SecondaryButton,
+  TextArea,
+} from "../components/ui.jsx";
+import { averageRating, formatCurrency } from "../utils/formatters.js";
 
-export default function Products({ userRoles, user }) {
-  const [rating, setRating] = useState(0);
-  console.log("userRoles: ", userRoles);
-  console.log("id from user: ", user.id);
-  const { productsId } = useParams();
+export default function Products({ user }) {
   const navigate = useNavigate();
+  const { productsId } = useParams();
   const [product, setProduct] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [productLoader, setProductLoader] = useState(true);
-  const [addingToCart, setAddingToCart] = useState(false);
-  const [message, setMessage] = useState("");
-  const [showModal, setShowModal] = useState(false);
-  const [imageData, setImageData] = useState("");
-  const [comment, setComment] = useState("");
-  const [reviewsList, setReviewsList] = useState([]);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingReview, setEditingReview] = useState(null);
-  const [editForm, setEditForm] = useState({
-    comment: "",
-    rating: 1,
-  });
-  const [editLoading, setEditLoading] = useState(false);
+  const [reviews, setReviews] = useState([]);
+  const [customOrders, setCustomOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [savingReview, setSavingReview] = useState(false);
+  const [message, setMessage] = useState(null);
+  const [reviewForm, setReviewForm] = useState({ comment: "", rating: 5 });
+  const [replyDrafts, setReplyDrafts] = useState({});
+  const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
 
-  const getProduct = async () => {
-    setProductLoader(true);
-    try {
-      const res = await api.get(`/api/products/${productsId}`);
-      setProduct(res.data);
-    } catch (e) {
-      console.log("Error fetching product:", e?.response?.data?.message);
-      console.log("error: ", e);
-    } finally {
-      setProductLoader(false);
-    }
+  useEffect(() => {
+    const loadProduct = async () => {
+      try {
+        const [productRes, reviewRes] = await Promise.all([
+          api.get(`/api/products/${productsId}`),
+          api.get(`/api/products/${productsId}/review`),
+        ]);
+
+        setProduct(productRes.data);
+        setReviews(Array.isArray(reviewRes.data) ? reviewRes.data : []);
+      } catch {
+        setProduct(null);
+        setReviews([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProduct();
+  }, [productsId]);
+
+  useEffect(() => {
+    if (!user?.id || !product?._id) return;
+
+    const loadCustomOrders = async () => {
+      try {
+        const res = await api.get(`/api/products/${productsId}/custom-orders`);
+        setCustomOrders(Array.isArray(res.data) ? res.data : []);
+      } catch {
+        setCustomOrders([]);
+      }
+    };
+
+    loadCustomOrders();
+  }, [productsId, product?._id, user?.id]);
+
+  const isOwner =
+    product?.owner?._id?.toString?.() === user?.id?.toString?.() ||
+    product?.owner?.toString?.() === user?.id?.toString?.();
+  const reviewAverage = useMemo(() => averageRating(reviews), [reviews]);
+  const media = useMemo(() => {
+    if (!product) return [];
+    if (Array.isArray(product.media) && product.media.length) return product.media;
+    if (product.image) return [{ url: product.image, kind: "image" }];
+    return [];
+  }, [product]);
+  const selectedMedia = media[selectedMediaIndex] || media[0];
+
+  const refreshReviews = async () => {
+    const reviewRes = await api.get(`/api/products/${productsId}/review`);
+    setReviews(Array.isArray(reviewRes.data) ? reviewRes.data : []);
   };
-  const getReviews = async () => {
-    try {
-      const res = await api.get(`/api/products/${productsId}/review`);
-      setReviewsList(res?.data);
-      console.log("got reviews: ", res?.data);
-    } catch (e) {
-      console.log("Error fetching reviews:", e?.response?.data?.message);
-      console.log("error: ", e);
-    } finally {
-      setLoading(false);
-    }
+
+  const refreshCustomOrders = async () => {
+    if (!user?.id) return;
+    const res = await api.get(`/api/products/${productsId}/custom-orders`);
+    setCustomOrders(Array.isArray(res.data) ? res.data : []);
   };
 
   const addToCart = async () => {
-    setAddingToCart(true);
     try {
-      const res = await api.post(`/api/products/${productsId}/add-cart`, {});
-      console.log("added to cart: ", res?.data);
-      setMessage("Product added to cart successfully!");
-      setTimeout(() => setMessage(""), 3000);
-    } catch (e) {
-      console.log("error: ", e?.response?.data?.error);
-      setMessage(e.response?.data?.error || "Error adding to cart");
-      setTimeout(
-        () =>
-          navigate("/auth", {
-            state: { url: `/products/${productsId}` },
-          }),
-        2000
-      );
-    } finally {
-      setAddingToCart(false);
+      await api.post(`/api/products/${productsId}/add-cart`, {});
+      setMessage({ tone: "success", text: "Product added to cart." });
+    } catch (error) {
+      setMessage({
+        tone: "error",
+        text: error.response?.data?.error || "Please login to add items to cart.",
+      });
+
+      if (error.response?.status === 401) {
+        setTimeout(() => {
+          navigate("/auth", { state: { url: `/products/${productsId}` } });
+        }, 1200);
+      }
     }
   };
 
-  useEffect(() => {
-    getProduct();
-    getReviews();
-  }, [productsId]);
+  const handleDelete = async () => {
+    try {
+      await api.delete(`/api/products/${productsId}`);
+      navigate("/products");
+    } catch (error) {
+      setMessage({
+        tone: "error",
+        text: error.response?.data?.error || "Unable to delete product.",
+      });
+    }
+  };
 
-  if (productLoader) {
-    return (
-      <div
-        className="d-flex justify-content-center align-items-center"
-        style={{ height: "50vh" }}
-      >
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
-      </div>
-    );
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setSavingReview(true);
+      await api.post(`/api/products/${productsId}/review`, reviewForm);
+      setReviewForm({ comment: "", rating: 5 });
+      await refreshReviews();
+      setMessage({ tone: "success", text: "Review posted successfully." });
+    } catch (error) {
+      setMessage({
+        tone: "error",
+        text: error.response?.data?.error || "Please login to submit a review.",
+      });
+
+      if (error.response?.status === 401) {
+        setTimeout(() => {
+          navigate("/auth", { state: { reviewUrl: `/products/${productsId}` } });
+        }, 1200);
+      }
+    } finally {
+      setSavingReview(false);
+    }
+  };
+
+  const handleReplySubmit = async (reviewId) => {
+    const comment = replyDrafts[reviewId]?.trim();
+    if (!comment) return;
+
+    try {
+      await api.post(`/api/products/${productsId}/review/${reviewId}/replies`, { comment });
+      setReplyDrafts((current) => ({ ...current, [reviewId]: "" }));
+      await refreshReviews();
+      setMessage({ tone: "success", text: "Reply posted." });
+    } catch (error) {
+      setMessage({
+        tone: "error",
+        text: error.response?.data?.error || "Unable to post reply.",
+      });
+    }
+  };
+
+  const handleCustomizationSubmit = async (form) => {
+    try {
+      await api.post(`/api/products/${productsId}/custom-orders`, {
+        improvementNote: form.improvementNote,
+        extraCharge: Number(form.extraCharge),
+        preview: {
+          tagText: form.tagText,
+          printText: form.printText,
+          baseColor: form.baseColor,
+          accentColor: form.accentColor,
+          rotation: Number(form.rotation),
+          printSize: Number(form.printSize),
+        },
+      });
+      await refreshCustomOrders();
+      setMessage({ tone: "success", text: "Customization request sent to the producer." });
+    } catch (error) {
+      setMessage({
+        tone: "error",
+        text: error.response?.data?.error || "Unable to send customization request.",
+      });
+      throw error;
+    }
+  };
+
+  const handleCustomOrderStatus = async (customOrderId, status) => {
+    try {
+      await api.patch(`/api/products/custom-orders/${customOrderId}/status`, { status });
+      await refreshCustomOrders();
+      setMessage({ tone: "success", text: `Custom order marked as ${status}.` });
+    } catch (error) {
+      setMessage({
+        tone: "error",
+        text: error.response?.data?.error || "Unable to update custom order status.",
+      });
+    }
+  };
+
+  if (loading) {
+    return <LoadingState label="Loading product details" />;
   }
 
   if (!product) {
     return (
-      <div className="container text-center py-5">
-        <i className="bi bi-exclamation-triangle display-1 text-warning"></i>
-        <h3 className="mt-3">Product not found</h3>
-        <button className="btn btn-primary mt-3" onClick={() => navigate("/")}>
-          <i className="bi bi-arrow-left me-2"></i>
-          Back to Products
-        </button>
-      </div>
+      <Panel className="text-center">
+        <h1 className="text-3xl font-black text-slate-950">Product not found</h1>
+        <p className="mt-3 text-sm text-slate-500">
+          The item you requested may have been removed or the link is incorrect.
+        </p>
+        <div className="mt-6">
+          <Link
+            to="/products"
+            className="inline-flex rounded-full bg-slate-950 px-5 py-3 text-sm font-semibold text-white"
+          >
+            Back to products
+          </Link>
+        </div>
+      </Panel>
     );
   }
 
-  const handleUpdateImage = async (e, id) => {
-    const formData = new FormData();
-    formData.append("image", imageData);
-    e.preventDefault();
-    setLoading(true);
-    try {
-      console.log("update starts");
-      const res = await api.patch(`/api/products/${id}`, formData);
-      console.log("image updated: ", res?.data);
-      setShowModal(false);
-    } catch (e) {
-      console.log("Error updating image: ", e?.response?.data?.error);
-    } finally {
-      setImageData("");
-      getProduct();
-      setLoading(false);
-    }
-  };
-  const handleDelete = async () => {
-    try {
-      const res = await api.delete(`/api/products/${productsId}`);
-      console.log("deleted: ", res?.data);
-
-      navigate("/products");
-    } catch (e) {
-      alert(e?.response?.data?.error);
-      console.log("error: ", e?.response?.data?.error);
-    }
-  };
-  const handleReviewSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    const data = {
-      comment,
-      rating,
-    };
-    try {
-      const res = await api.post(`/api/products/${productsId}/review`, data);
-      console.log("review posted: ", res?.data);
-    } catch (e) {
-      console.log("GO: ", e?.response?.data?.error);
-      if (e?.status === 401) {
-        setMessage(e?.response?.data?.error);
-        setTimeout(
-          () =>
-            navigate("/auth", {
-              state: { reviewUrl: `/products/${productsId}` },
-            }),
-          2000
-        );
-      }
-    } finally {
-      getProduct();
-      setComment("");
-      setRating("");
-      getReviews();
-      setLoading(false);
-    }
-  };
-  console.log("ratings: ", rating, "comments: ", comment);
-  console.log("reviews: ", reviewsList);
-  const handleReviewDelete = async (id) => {
-    setLoading(true);
-    try {
-      await api.delete(`/api/products/${productsId}/review/${id}`);
-    } catch (e) {
-      console.log("error: ", e?.response?.data?.error);
-    } finally {
-      getReviews();
-      setLoading(false);
-    }
-  };
-  const openEditModal = (review) => {
-    setEditingReview(review);
-    setEditForm({
-      comment: review.comment,
-      rating: review.rating,
-    });
-    setShowEditModal(true);
-  };
-
-  const handleReviewUpdate = async () => {
-    if (!editingReview) return;
-
-    try {
-      setEditLoading(true);
-      await api.patch(
-        `/api/products/${editingReview.product}/review/${editingReview._id}`,
-        editForm
-      );
-      setShowEditModal(false);
-      // getProduct(); // refetch reviews
-      getReviews()
-    } catch (e) {
-      console.log("Review update error:", e?.response?.data);
-    } finally {
-      setEditLoading(false);
-    }
-  };
-
   return (
-    <div className="container">
-      <div className="row">
-        <div className="col-12 mb-3">
-          <button
-            className="btn btn-outline-secondary"
-            onClick={() => navigate("/")}
-          >
-            <i className="bi bi-arrow-left me-2"></i>
-            Back to Products
-          </button>
-        </div>
-      </div>
-
-      {message && (
-        <div
-          className={`alert ${
-            message.includes("Error") ? "alert-danger" : "alert-success"
-          } alert-dismissible fade show`}
-        >
-          {message}
-        </div>
-      )}
-
-      <div className="row">
-        {/* left side div for image */}
-        <div className="col-lg-6 mb-4">
-          <div className="card border-0 shadow-sm">
-            {product.image ? (
-              <img
-                src={product.image}
-                className="card-img-top"
-                alt={product.name}
-                style={{ height: "34rem", objectFit: "cover" }}
-              />
+    <div className="space-y-8">
+      <PageHero
+        badge={product.section || "Product detail"}
+        title={product.name}
+        description={product.shortDescription || product.description || "Detailed marketplace listing"}
+        actions={
+          <>
+            <SecondaryButton onClick={() => navigate("/products")}>
+              Back to catalog
+            </SecondaryButton>
+            {isOwner ? (
+              <PrimaryButton onClick={() => navigate(`/products/${productsId}/edit`)}>
+                Edit listing
+              </PrimaryButton>
             ) : (
-              <div
-                className="card-img-top d-flex align-items-center justify-content-center bg-light"
-                style={{ height: "30rem" }}
-              >
-                <i className="bi bi-image display-1 text-muted"></i>
-              </div>
+              <AccentButton onClick={addToCart}>Add to cart</AccentButton>
             )}
-          </div>
-        </div>
-        {/* right div */}
-        <div className="col-lg-6">
-          <div className="card border-0 shadow-sm">
-            <div className="card-body p-4">
-              <h1 className="card-title display-5 mb-3">{product.name}</h1>
+          </>
+        }
+      />
 
-              <div className="mb-4">
-                <span className="text-success display-4 fw-bold">
-                  Rs {product.price}
-                </span>
-              </div>
+      {message ? <InlineAlert tone={message.tone}>{message.text}</InlineAlert> : null}
 
-              <div className="mb-4">
-                <h5 className="text-muted">Product Details</h5>
-                <hr />
-                {/* id */}
-                <div className="row">
-                  <div className="col-sm-4">
-                    <strong>Product ID:</strong>
-                  </div>
-                  <div className="col-sm-8">{product._id}</div>
-                </div>
-                {/* seller */}
-                {product.owner && (
-                  <div className="row mt-2">
-                    <div className="col-sm-4">
-                      <strong>Seller:</strong>
-                    </div>
-                    <div className="col-sm-8">{product.owner}</div>
-                  </div>
-                )}
-              </div>
-              {/* buttons */}
-              <div className="d-grid gap-2">
+      <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+        <Panel className="overflow-hidden">
+          <div className="grid gap-6 lg:grid-cols-[120px_1fr]">
+            <div className="grid gap-3 lg:grid-rows-[repeat(5,84px)]">
+              {media.map((item, index) => (
                 <button
-                  className="btn btn-primary btn-lg"
-                  onClick={addToCart}
-                  disabled={addingToCart}
+                  key={`${item.url}-${index}`}
+                  type="button"
+                  onClick={() => setSelectedMediaIndex(index)}
+                  className={`overflow-hidden rounded-2xl border ${
+                    index === selectedMediaIndex ? "border-amber-400" : "border-slate-200"
+                  }`}
                 >
-                  {addingToCart ? (
-                    <>
-                      <span
-                        className="spinner-border spinner-border-sm me-2"
-                        role="status"
-                      ></span>
-                      Adding to Cart...
-                    </>
+                  {item.kind === "video" ? (
+                    <div className="grid h-20 place-items-center bg-slate-100 text-xs font-semibold text-slate-600">
+                      Video
+                    </div>
                   ) : (
-                    <>
-                      <i className="bi bi-cart-plus me-2"></i>
-                      Add to Cart
-                    </>
+                    <img src={item.url} alt={`${product.name} ${index + 1}`} className="h-20 w-full object-cover" />
                   )}
                 </button>
-
-                <button
-                  className="btn btn-outline-primary btn-lg"
-                  onClick={() => navigate("/products/carts-show/user")}
-                >
-                  <i className="bi bi-cart me-2"></i>
-                  View Cart
-                </button>
-                {product?.owner?.toString() === user?.id?.toString() && (
-                  <button
-                    className="btn btn-outline-secondary"
-                    onClick={() => setShowModal(true)}
-                  >
-                    Update Image
-                  </button>
-                )}
-                {product?.owner?.toString() === user?.id?.toString() && (
-                  <button
-                    className="btn btn-outline-danger"
-                    onClick={handleDelete}
-                  >
-                    Delete Product
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="row">
-        {/* <div className="col-12 mt-4">
-          <h3 className="mb-3">Reviews</h3>
-          <p>{product.description}</p>
-        </div> */}
-        <div className="col-12 col-lg-5 mt-4 mx-auto">
-          <form className="card p-3" onSubmit={handleReviewSubmit}>
-            <div className="card-head">
-              <h3 className="mb-3">Review</h3>
-            </div>
-            <div className="mb-3 d-flex">
-              <label htmlFor="name" className="form-label mt-2">
-                Enter
-              </label>
-              <input
-                placeholder="Enter Review"
-                name="comment"
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                className="ms-4 form-control"
-              />
-            </div>
-            <div className="mb-3 d-flex">
-              <label htmlFor="name" className="form-label mt-2">
-                Rating
-              </label>
-              {[1, 2, 3, 4, 5].map((i) => (
-                <i
-                  key={i}
-                  className={`bi ${
-                    i <= rating ? "bi-star-fill" : "bi-star"
-                  } text-warning fs-4 me-1 ms-3`}
-                  style={{ cursor: "pointer" }}
-                  onClick={() => setRating(i)}
-                />
               ))}
             </div>
-            <button type="submit" className="btn btn-outline-success">
-              {loading ? (
-                <>
-                  <span
-                    role="status"
-                    className="spinner-border spinner-border-sm me-2"
-                  ></span>{" "}
-                  Submitting...
-                </>
-              ) : (
-                "Submit"
-              )}
-            </button>
-          </form>
-        </div>
-      </div>
-      <div className="col-12 col-lg-3 mt-4">
-        {reviewsList?.length > 0 &&
-          reviewsList?.map((review) => (
-            <>
-              <h3 className="mb-3">Customer Reviews</h3>
-              <div className="card p-3 mb-3" key={review?._id}>
-                <div className="card-header h4">
-                  By : {review?.owner?.username}
-                </div>
-                <div className="card-body">
-                  <h5 className="card-title">Comment: {review?.comment}</h5>
-                  <p className="card-text">
-                    {review?.rating}{" "}
-                    <i className="bi bi-star-fill text-warning"></i>
-                  </p>
-                </div>
-                <div className="d-flex justify-content-evenly">
-                  {review?.owner?._id?.toString() === user?.id?.toString() && (
-                    <button
-                      className="btn btn-outline-danger"
-                      onClick={() => handleReviewDelete(review?._id)}
-                    >
-                      {loading ? (
-                        <>
-                          <span
-                            role="status"
-                            className="spinner-border spinner-border-sm me-2"
-                          ></span>{" "}
-                          Deleting
-                        </>
-                      ) : (
-                        <i className="bi bi-trash"></i>
-                      )}
-                    </button>
-                  )}
-                  {review?.owner?._id?.toString() === user?.id?.toString() && (
-                    <button
-                      className="btn btn-outline-secondary"
-                      onClick={() => openEditModal(review)}
-                    >
-                      <i className="bi bi-pencil"></i>
-                    </button>
-                  )}
-                </div>
-              </div>
-            </>
-          ))}
-      </div>
 
-      {showModal && (
-        <div
-          className="modal fade show"
-          style={{ display: "block" }}
-          tabIndex="-1"
-        >
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h4 className="modal-title">Update Image</h4>
-                <button
-                  type="button"
-                  className="btn-close"
-                  onClick={() => setShowModal(false)}
-                ></button>
-              </div>
-              <div className="modal-body">
-                <form onSubmit={(e) => handleUpdateImage(e, product._id)}>
-                  <div className="mb-3">
-                    <label htmlFor="image" className="form-label">
-                      Choose Image
-                    </label>
-                    <input
-                      type="file"
-                      className="form-control"
-                      id="image"
-                      onChange={(e) => setImageData(e.target.files[0])}
-                    />
+            <div className="space-y-6">
+              <div className="overflow-hidden rounded-[2rem] bg-slate-100">
+                {selectedMedia?.kind === "video" ? (
+                  <video src={selectedMedia.url} controls className="h-[460px] w-full object-cover" />
+                ) : selectedMedia?.url ? (
+                  <img src={selectedMedia.url} alt={product.name} className="h-[460px] w-full object-cover" />
+                ) : (
+                  <div className="grid h-[460px] place-items-center bg-[linear-gradient(135deg,_#dbeafe,_#f8fafc)] text-slate-400">
+                    <PackageIllustration />
                   </div>
+                )}
+              </div>
 
-                  <button className="btn btn-primary">
-                    {loading ? "Updating..." : "Update"}
-                  </button>
-                </form>
+              <div className="grid gap-4 md:grid-cols-2">
+                <Panel className="bg-slate-50">
+                  <p className="text-sm font-semibold uppercase tracking-[0.25em] text-slate-400">
+                    About this item
+                  </p>
+                  <ul className="mt-4 space-y-2 text-sm leading-6 text-slate-600">
+                    {(product.bulletPoints?.length ? product.bulletPoints : [product.description]).map(
+                      (point, index) => (
+                        <li key={`${point}-${index}`}>{point}</li>
+                      )
+                    )}
+                  </ul>
+                </Panel>
+
+                <Panel className="bg-slate-50">
+                  <p className="text-sm font-semibold uppercase tracking-[0.25em] text-slate-400">
+                    Product details
+                  </p>
+                  <dl className="mt-4 space-y-3 text-sm text-slate-600">
+                    {(product.specifications || []).length ? (
+                      product.specifications.map((item, index) => (
+                        <div key={`${item.label}-${index}`} className="flex justify-between gap-4">
+                          <dt className="font-semibold text-slate-900">{item.label}</dt>
+                          <dd className="text-right">{item.value}</dd>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="flex justify-between gap-4">
+                        <dt className="font-semibold text-slate-900">Category</dt>
+                        <dd>{product.category || "General"}</dd>
+                      </div>
+                    )}
+                  </dl>
+                </Panel>
               </div>
             </div>
           </div>
-        </div>
-      )}
-      {showModal && (
-        <div
-          className="modal-backdrop fade show"
-          onClick={() => setShowModal(false)}
-        ></div>
-      )}
-      {showEditModal && (
-        <div className="modal fade show d-block" tabIndex="-1">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Edit Review</h5>
+        </Panel>
+
+        <div className="space-y-6">
+          <Panel className="space-y-5">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.25em] text-slate-400">
+                Featured listing
+              </p>
+              <h2 className="mt-2 text-3xl font-black tracking-tight text-slate-950">
+                {product.name}
+              </h2>
+              <div className="mt-3 flex items-center gap-3">
+                <RatingStars rating={reviewAverage} />
+                <span className="text-sm text-slate-500">
+                  {reviews.length} review{reviews.length === 1 ? "" : "s"}
+                </span>
+              </div>
+            </div>
+
+            <div className="rounded-[1.5rem] bg-slate-50 p-5">
+              <p className="text-xs uppercase tracking-[0.25em] text-slate-400">Price</p>
+              <p className="mt-2 text-4xl font-black text-slate-950">
+                {formatCurrency(product.price)}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                {product.deliveryInfo || "Standard delivery available"}
+              </p>
+            </div>
+
+            <dl className="grid gap-3 text-sm text-slate-600">
+              <InfoCard label="Seller" value={product.owner?.username || "Marketplace partner"} />
+              <InfoCard label="Brand" value={product.brand || "Generic"} />
+              <InfoCard label="Category" value={product.category || "General"} />
+              <InfoCard
+                label="Availability"
+                value={product.quantity > 0 ? `${product.quantity} in stock` : "Out of stock"}
+              />
+              <InfoCard label="Returns" value={product.returnPolicy || "7-day replacement"} />
+            </dl>
+
+            {!isOwner ? (
+              <div className="grid gap-3">
+                <AccentButton onClick={addToCart} disabled={product.quantity < 1}>
+                  {product.quantity < 1 ? "Out of stock" : "Add to cart"}
+                </AccentButton>
+                <SecondaryButton onClick={() => navigate("/products/carts-show/user")}>
+                  Go to cart
+                </SecondaryButton>
+                <PrimaryButton
+                  type="button"
+                  onClick={() =>
+                    document.getElementById("customization-studio")?.scrollIntoView({
+                      behavior: "smooth",
+                      block: "start",
+                    })
+                  }
+                >
+                  Customize with producer
+                </PrimaryButton>
+              </div>
+            ) : (
+              <div className="grid gap-3">
+                <PrimaryButton onClick={() => navigate(`/products/${productsId}/edit`)}>
+                  Edit product
+                </PrimaryButton>
+                <SecondaryButton onClick={() => navigate("/seller/dashboard")}>
+                  Open seller dashboard
+                </SecondaryButton>
                 <button
                   type="button"
-                  className="btn-close"
-                  onClick={() => setShowEditModal(false)}
-                ></button>
-              </div>
-
-              <div className="modal-body">
-                {/* COMMENT */}
-                <div className="mb-3">
-                  <label className="form-label">Comment</label>
-                  <textarea
-                    className="form-control"
-                    rows="3"
-                    value={editForm.comment}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm, comment: e.target.value })
-                    }
-                  />
-                </div>
-
-                {/* RATING */}
-                <div className="mb-3">
-                  <label className="form-label">Rating</label>
-                  <select
-                    className="form-select"
-                    value={editForm.rating}
-                    onChange={(e) =>
-                      setEditForm({
-                        ...editForm,
-                        rating: Number(e.target.value),
-                      })
-                    }
-                  >
-                    {[1, 2, 3, 4, 5].map((r) => (
-                      <option key={r} value={r}>
-                        {r} ⭐
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="modal-footer">
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => setShowEditModal(false)}
+                  onClick={handleDelete}
+                  className="inline-flex items-center justify-center rounded-full border border-rose-200 bg-rose-50 px-5 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-100"
                 >
-                  Cancel
-                </button>
-                <button
-                  className="btn btn-primary"
-                  onClick={handleReviewUpdate}
-                  disabled={editLoading}
-                >
-                  {editLoading ? (
-                    <>
-                      <span className="spinner-border spinner-border-sm me-2"></span>
-                      Updating
-                    </>
-                  ) : (
-                    "Update Review"
-                  )}
+                  Delete product
                 </button>
               </div>
+            )}
+          </Panel>
+
+          <CustomizationStudio
+            product={product}
+            isOwner={isOwner}
+            customOrders={customOrders}
+            onSubmit={handleCustomizationSubmit}
+            onStatusChange={handleCustomOrderStatus}
+            buyerName={user?.username}
+            onPaymentSuccess={async () => {
+              await refreshCustomOrders();
+              setMessage({ tone: "success", text: "Custom order payment completed." });
+            }}
+            onPaymentError={(error) =>
+              setMessage({
+                tone: "error",
+                text: error.response?.data?.error || error.message || "Custom payment failed.",
+              })
+            }
+          />
+        </div>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+        <Panel>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.25em] text-slate-400">
+                Write a review
+              </p>
+              <h3 className="mt-2 text-2xl font-bold text-slate-950">Share your experience</h3>
             </div>
           </div>
-        </div>
-      )}
-      {/* <div className="modal-backdrop fade show"></div> */}
+
+          <form className="mt-6 space-y-4" onSubmit={handleReviewSubmit}>
+            <TextArea
+              value={reviewForm.comment}
+              onChange={(e) =>
+                setReviewForm((current) => ({ ...current, comment: e.target.value }))
+              }
+              placeholder="What stood out about this product?"
+            />
+            <div className="space-y-2">
+              <label className="text-sm font-semibold text-slate-700">Rating</label>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setReviewForm((current) => ({ ...current, rating: value }))}
+                    className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                      value <= reviewForm.rating
+                        ? "bg-amber-400 text-slate-950"
+                        : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+                    }`}
+                  >
+                    {value} star{value === 1 ? "" : "s"}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <AccentButton type="submit" disabled={savingReview}>
+              {savingReview ? "Submitting..." : "Submit review"}
+            </AccentButton>
+          </form>
+        </Panel>
+
+        <Panel>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.25em] text-slate-400">
+                Reviews
+              </p>
+              <h3 className="mt-2 text-2xl font-bold text-slate-950">Customer feedback</h3>
+            </div>
+            <div className="text-right">
+              <p className="text-3xl font-black text-slate-950">{reviewAverage.toFixed(1)}</p>
+              <p className="text-sm text-slate-500">Average rating</p>
+            </div>
+          </div>
+
+          <div className="mt-6 space-y-4">
+            {reviews.length === 0 ? (
+              <p className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-500">
+                No reviews yet. Be the first to leave one.
+              </p>
+            ) : (
+              reviews.map((review) => (
+                <article key={review._id} className="rounded-[1.5rem] border border-slate-200 p-5">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p className="font-semibold text-slate-950">
+                        {review.owner?.username || "Anonymous buyer"}
+                      </p>
+                      <div className="mt-2">
+                        <RatingStars rating={review.rating ?? review.ratings ?? 0} />
+                      </div>
+                    </div>
+                  </div>
+                  <p className="mt-4 text-sm leading-6 text-slate-600">{review.comment}</p>
+
+                  <div className="mt-4 space-y-3 rounded-2xl bg-slate-50 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">
+                      Replies
+                    </p>
+                    {(review.replies || []).length ? (
+                      review.replies.map((reply) => (
+                        <div key={reply._id} className="rounded-2xl border border-slate-200 bg-white p-3">
+                          <p className="text-sm font-semibold text-slate-900">
+                            {reply.owner?.username || "Marketplace user"}
+                          </p>
+                          <p className="mt-1 text-sm text-slate-600">{reply.comment}</p>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-slate-500">No replies yet.</p>
+                    )}
+
+                    <div className="space-y-3">
+                      <TextArea
+                        value={replyDrafts[review._id] || ""}
+                        onChange={(e) =>
+                          setReplyDrafts((current) => ({
+                            ...current,
+                            [review._id]: e.target.value,
+                          }))
+                        }
+                        placeholder="Reply to this review"
+                        className="min-h-24"
+                      />
+                      <SecondaryButton type="button" onClick={() => handleReplySubmit(review._id)}>
+                        Add reply
+                      </SecondaryButton>
+                    </div>
+                  </div>
+                </article>
+              ))
+            )}
+          </div>
+        </Panel>
+      </section>
+    </div>
+  );
+}
+
+function RatingStars({ rating }) {
+  return (
+    <div className="flex items-center gap-1 text-amber-500">
+      {[1, 2, 3, 4, 5].map((value) => (
+        <svg
+          key={value}
+          viewBox="0 0 24 24"
+          className={`h-5 w-5 ${
+            value <= Math.round(rating) ? "fill-current" : "fill-slate-200"
+          }`}
+        >
+          <path d="m12 2.5 2.92 5.92 6.53.95-4.72 4.6 1.12 6.5L12 17.4l-5.85 3.07 1.12-6.5-4.72-4.6 6.53-.95z" />
+        </svg>
+      ))}
+    </div>
+  );
+}
+
+function PackageIllustration() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-20 w-20 fill-none stroke-current stroke-1.5">
+      <path d="m3 7 9-4 9 4-9 4z" />
+      <path d="M3 7v10l9 4 9-4V7" />
+      <path d="M12 11v10" />
+    </svg>
+  );
+}
+
+function InfoCard({ label, value }) {
+  return (
+    <div className="rounded-2xl border border-slate-200 p-4">
+      <dt className="font-semibold text-slate-900">{label}</dt>
+      <dd className="mt-1">{value}</dd>
     </div>
   );
 }

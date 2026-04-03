@@ -1,236 +1,248 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { api } from "../../api";
-import { API_URL } from "../../api";
-export default function CartProducts() {
+import { useEffect, useMemo, useState } from "react";
+import { Navigate, useNavigate } from "react-router-dom";
+import { api } from "../../api.js";
+import {
+  AccentButton,
+  EmptyState,
+  InlineAlert,
+  LoadingState,
+  PageHero,
+  Panel,
+  SecondaryButton,
+} from "../components/ui.jsx";
+import { formatCurrency } from "../utils/formatters.js";
+import { launchRazorpayCheckout } from "../utils/payments.js";
+
+export default function CartProducts({ isLoggedIn }) {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [total, setTotal] = useState(0);
-  const [deleteFromCart, setDeleteFromCart] = useState(false);
-  // const getCartProducts = async () => {
-  //   try {
-  //     console.log("getting cart details");
-  //     const res = await api.get("/api/products/cart-details");
-  //     console.log("got products: ", res?.data);
-  //     // console.log(
-  //     //   "quantity: ",
-  //     //   res?.data?.products?.quantity
-  //     // );
-  //     // console.log(
-  //     //   "product price:",
-  //     //   res?.data?.products?.price
-  //     // );
-  //     const cartProducts = res.data || [];
-  //     setProducts(cartProducts);
-
-  //     // Calculate total
-  //     const totalPrice = cartProducts.reduce((sum, product) => {
-  //       return sum + parseFloat(product.price || 0);
-  //     }, 0);
-  //     setTotal(totalPrice);
-  //   } catch (e) {
-  //     console.log("Error fetching cart:", e?.response?.data?.error);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-  const getCartProducts = async () => {
-    try {
-      setLoading(true);
-      const res = await api.get("/api/products/cart-details");
-
-      const cartProducts = res?.data || [];
-      setProducts(cartProducts);
-
-      const totalPrice = cartProducts.reduce(
-        (sum, p) => sum + p.price * p.quantity,
-        0
-      );
-      setTotal(totalPrice);
-    } catch (e) {
-      console.log("Error fetching cart:", e?.response?.data?.error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [deletingId, setDeletingId] = useState("");
+  const [checkingOut, setCheckingOut] = useState(false);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
+    const getCartProducts = async () => {
+      try {
+        setLoading(true);
+        const res = await api.get("/api/products/cart-details");
+        setProducts(Array.isArray(res.data) ? res.data : []);
+      } catch (error) {
+        setMessage(error.response?.data?.error || "Unable to load cart.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
     getCartProducts();
   }, []);
 
-  if (loading) {
-    return (
-      <div
-        className="d-flex justify-content-center align-items-center"
-        style={{ height: "50vh" }}
-      >
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
-      </div>
-    );
+  const total = useMemo(
+    () =>
+      products.reduce(
+        (sum, product) => sum + Number(product.price || 0) * Number(product.quantity || 0),
+        0
+      ),
+    [products]
+  );
+
+  if (!isLoggedIn) {
+    return <Navigate to="/auth" replace state={{ url: "/products/carts-show/user" }} />;
   }
+
   const handleCartDelete = async (id) => {
-    setDeleteFromCart(true);
     try {
+      setDeletingId(id);
       await api.delete(`/api/products/cart/${id}`);
-    } catch (e) {
-      console.log("Error deleting cart item: ", e?.response?.data);
+      setProducts((current) => current.filter((product) => product.id !== id));
+    } catch (error) {
+      setMessage(error.response?.data?.error || "Unable to remove item.");
     } finally {
-      getCartProducts();
-      setDeleteFromCart(false);
+      setDeletingId("");
     }
   };
-  const handlePayment = async () => {
-    const res = await api.post("/api/products/create-order");
 
-    const options = {
-      key: "rzp_test_xxxxx",
-      amount: res.data.amount,
-      currency: "INR",
-      order_id: res.data.id,
-      name: "My Shop",
-      description: "Test Payment",
-      handler: function (response) {
-        console.log("Payment success:", response);
-      },
-    };
-
-    const rzp = new window.Razorpay(options);
-    rzp.open();
+  const handleQuantityChange = async (id, quantity) => {
+    try {
+      await api.patch(`/api/products/cart/${id}`, { quantity });
+      setProducts((current) =>
+        current.map((product) =>
+          product.id === id ? { ...product, quantity } : product
+        )
+      );
+    } catch (error) {
+      setMessage(error.response?.data?.error || "Unable to update quantity.");
+    }
   };
 
+  const handleCheckout = async () => {
+    try {
+      setCheckingOut(true);
+      setMessage("");
+      const orderRes = await api.post("/api/products/checkout/cart-order");
+      const paymentResult = await launchRazorpayCheckout(orderRes.data);
+
+      await api.post("/api/products/checkout/cart-verify", {
+        orderId: orderRes.data.orderId,
+        razorpay_order_id: paymentResult.razorpay_order_id,
+        razorpay_payment_id: paymentResult.razorpay_payment_id,
+        razorpay_signature: paymentResult.razorpay_signature,
+      });
+
+      setProducts([]);
+      setMessage("Payment successful. Your cart order has been placed.");
+    } catch (error) {
+      setMessage(error.response?.data?.error || error.message || "Checkout failed.");
+    } finally {
+      setCheckingOut(false);
+    }
+  };
+
+  if (loading) {
+    return <LoadingState label="Loading your cart" />;
+  }
+
   return (
-    <div className="container">
-      <div className="row mb-4">
-        <div className="col-12">
-          <div className="d-flex justify-content-between align-items-center">
-            <h2 className="text-primary mb-0">
-              <i className="bi bi-cart me-2"></i>
-              Shopping Cart
-            </h2>
-            <button
-              className="btn btn-outline-primary"
-              onClick={() => navigate("/")}
-            >
-              <i className="bi bi-arrow-left me-2"></i>
-              Continue Shopping
-            </button>
-          </div>
-        </div>
-      </div>
+    <div className="space-y-8">
+      <PageHero
+        badge="Cart"
+        title="Review your order"
+        description="The cart now has clearer totals, cleaner item controls, and a checkout summary that feels more intentional."
+        actions={
+          <SecondaryButton onClick={() => navigate("/products")}>
+            Continue shopping
+          </SecondaryButton>
+        }
+      />
+
+      {message ? <InlineAlert>{message}</InlineAlert> : null}
 
       {products.length === 0 ? (
-        <div className="text-center py-5">
-          <i className="bi bi-cart-x display-1 text-muted"></i>
-          <h4 className="text-muted mt-3">Your cart is empty</h4>
-          <p className="text-muted">Add some products to get started!</p>
-          <button
-            onClick={() => navigate("/")}
-            className="btn btn-primary mt-3"
-          >
-            <i className="bi bi-shop me-2"></i>
-            Start Shopping
-          </button>
-        </div>
+        <EmptyState
+          title="Your cart is empty"
+          description="Browse the catalog, add products you like, and come back here to review the order."
+          action={
+            <AccentButton onClick={() => navigate("/products")}>
+              Start shopping
+            </AccentButton>
+          }
+        />
       ) : (
-        <div className="row">
-          <div className="col-lg-8">
-            <div className="card shadow-sm border-0">
-              <div className="card-header bg-light">
-                <h5 className="mb-0">Cart Items ({products.length})</h5>
+        <section className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+          <Panel className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold uppercase tracking-[0.25em] text-slate-400">
+                  Items
+                </p>
+                <h2 className="mt-2 text-2xl font-bold text-slate-950">
+                  Cart items ({products.length})
+                </h2>
               </div>
-              <div className="card-body p-0">
-                {products.map((product, index) => (
-                  <div
-                    key={product._id}
-                    className={`p-3 ${
-                      index !== products.length - 1 ? "border-bottom" : ""
-                    }`}
-                  >
-                    <div className="row align-items-center">
-                      {/* IMAGE */}
-                      <div className="col-md-2 text-center">
-                        <img
-                          src={product.image || "/placeholder.png"}
-                          alt={product.name}
-                          className="img-fluid rounded"
-                          style={{ height: "90px", objectFit: "cover" }}
-                        />
-                      </div>
+            </div>
 
-                      {/* NAME */}
-                      <div className="col-md-4">
-                        <h6 className="mb-1">{product.name}</h6>
-                        <small className="text-muted">
-                          Price: Rs {product.price}
-                        </small>
+            <div className="space-y-4">
+              {products.map((product) => (
+                <article
+                  key={product.id}
+                  className="grid gap-4 rounded-[1.5rem] border border-slate-200 p-4 md:grid-cols-[120px_1fr_auto]"
+                >
+                  <div className="overflow-hidden rounded-2xl bg-slate-100">
+                    {product.image ? (
+                      <img
+                        src={product.image}
+                        alt={product.name}
+                        className="h-28 w-full object-cover"
+                      />
+                    ) : (
+                      <div className="grid h-28 place-items-center text-sm text-slate-400">
+                        No image
                       </div>
+                    )}
+                  </div>
 
-                      {/* QUANTITY */}
-                      <div className="col-md-2 text-center">
-                        <span className="badge bg-secondary px-3 py-2">
-                          Qty: {product.quantity}
-                        </span>
-                      </div>
+                  <div className="space-y-3">
+                    <div>
+                      <h3 className="text-lg font-bold text-slate-950">{product.name}</h3>
+                      <p className="mt-1 text-sm text-slate-500">
+                        Unit price: {formatCurrency(product.price)}
+                      </p>
+                      <p className="mt-1 text-sm text-slate-500">
+                        Section: {product.section || "general"} | Stock left: {product.availableQuantity}
+                      </p>
+                    </div>
 
-                      {/* SUBTOTAL */}
-                      <div className="col-md-2 text-center fw-bold text-success">
-                        Rs {product.price * product.quantity}
-                      </div>
-
-                      {/* DELETE */}
-                      <div className="col-md-2 text-end">
-                        <button
-                          className="btn btn-sm btn-outline-danger"
-                          onClick={() => handleCartDelete(product.id)}
-                          disabled={deleteFromCart}
-                        >
-                          <i className="bi bi-trash"></i>
-                        </button>
-                      </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <label className="text-sm font-semibold text-slate-700">
+                        Qty
+                      </label>
+                      <select
+                        value={product.quantity}
+                        onChange={(e) =>
+                          handleQuantityChange(product.id, Number(e.target.value))
+                        }
+                        className="rounded-full border border-slate-200 px-4 py-2 text-sm text-slate-700 outline-none focus:border-amber-400"
+                      >
+                        {Array.from(
+                          { length: Math.max(1, Math.min(Number(product.availableQuantity || 1), 10)) },
+                          (_, index) => index + 1
+                        ).map((value) => (
+                          <option key={value} value={value}>
+                            {value}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          </div>
 
-          <div className="col-lg-4">
-            <div className="card shadow-sm border-0 sticky-top">
-              <div className="card-header bg-primary text-white">
-                <h5 className="mb-0">Order Summary</h5>
+                  <div className="flex flex-col items-start justify-between gap-4 md:items-end">
+                    <p className="text-xl font-black text-slate-950">
+                      {formatCurrency(product.price * product.quantity)}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => handleCartDelete(product.id)}
+                      disabled={deletingId === product.id}
+                      className="rounded-full border border-rose-200 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {deletingId === product.id ? "Removing..." : "Remove"}
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </Panel>
+
+          <Panel className="space-y-5 bg-slate-950 text-white">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.25em] text-amber-300">
+                Summary
+              </p>
+              <h2 className="mt-2 text-2xl font-black">Order overview</h2>
+            </div>
+
+            <div className="space-y-3 rounded-[1.5rem] bg-white/5 p-5">
+              <div className="flex items-center justify-between text-sm text-slate-200">
+                <span>Items subtotal</span>
+                <span>{formatCurrency(total)}</span>
               </div>
-              <div className="card-body">
-                <div className="d-flex justify-content-between mb-3">
-                  <span>Subtotal ({products.length} items):</span>
-                  <span className="fw-bold">Rs {total.toFixed(2)}</span>
-                </div>
-                <div className="d-flex justify-content-between mb-3">
-                  <span>Shipping:</span>
-                  <span className="text-success">FREE</span>
-                </div>
-                <hr />
-                <div className="d-flex justify-content-between mb-4">
-                  <span className="fw-bold fs-5">Total:</span>
-                  <span className="fw-bold fs-5 text-success">
-                    Rs {total.toFixed(2)}
-                  </span>
-                </div>
-                <div className="d-grid">
-                  <button
-                    onClick={handlePayment}
-                    className="btn btn-success btn-lg"
-                  >
-                    <i className="bi bi-credit-card me-2"></i>
-                    Proceed to Checkout
-                  </button>
+              <div className="flex items-center justify-between text-sm text-slate-200">
+                <span>Shipping</span>
+                <span>Free</span>
+              </div>
+              <div className="border-t border-white/10 pt-3">
+                <div className="flex items-center justify-between text-lg font-bold text-white">
+                  <span>Total</span>
+                  <span>{formatCurrency(total)}</span>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+
+            <AccentButton onClick={handleCheckout} disabled={checkingOut}>
+              {checkingOut ? "Processing payment..." : "Proceed to checkout"}
+            </AccentButton>
+          </Panel>
+        </section>
       )}
     </div>
   );
