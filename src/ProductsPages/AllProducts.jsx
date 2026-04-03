@@ -80,17 +80,6 @@ export default function AllProducts({ isLoggedIn, user }) {
         badge="Marketplace home"
         title="Browse by section, shop like a marketplace, sell like a vendor"
         description="The home page now works more like Amazon: buyers land in the storefront, filter by sections like clothing or grocery, open detailed product pages, and jump into cart or seller actions from the same flow."
-        actions={
-          <>
-            <AccentButton onClick={() => navigate("/products/new")}>List a product</AccentButton>
-            <SecondaryButton onClick={() => navigate("/seller/dashboard")}>
-              Seller dashboard
-            </SecondaryButton>
-            <SecondaryButton onClick={() => navigate("/products/carts-show/user")}>
-              Open cart
-            </SecondaryButton>
-          </>
-        }
       />
 
       <section className="grid gap-4 xl:grid-cols-[1.25fr_340px]">

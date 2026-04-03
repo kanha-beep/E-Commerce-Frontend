@@ -95,9 +95,13 @@ export default function TopNav({
             <NavItem to="/">Home</NavItem>
             <NavItem to="/products">Products</NavItem>
             <NavItem to="/community-demand">Community Demand</NavItem>
-            <NavItem to="/products/new">Sell</NavItem>
-            <NavItem to="/seller/dashboard">Dashboard</NavItem>
           </nav>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <NavItem to="/products/new">List a product</NavItem>
+            <NavItem to="/seller/dashboard">Seller dashboard</NavItem>
+            <NavItem to="/products/carts-show/user">Open cart</NavItem>
+          </div>
 
           <div className="flex flex-wrap items-center gap-3">
             {authLoading ? (
