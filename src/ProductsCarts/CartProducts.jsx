@@ -47,7 +47,7 @@ export default function CartProducts({ isLoggedIn }) {
   );
 
   if (!isLoggedIn) {
-    return <Navigate to="/auth" replace state={{ url: "/products/carts-show/user" }} />;
+    return <Navigate to="/auth" replace state={{ url: "/cart" }} />;
   }
 
   const handleCartDelete = async (id) => {

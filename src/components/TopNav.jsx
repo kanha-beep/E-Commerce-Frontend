@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { api } from "../../api.js";
+import { api, clearAuthToken } from "../../api.js";
 
 function NavItem({ to, children }) {
   return (
@@ -34,6 +34,7 @@ export default function TopNav({
       setLoggingOut(true);
       await api.post("/api/auth/logout");
     } finally {
+      clearAuthToken();
       setUser(null);
       setIsLoggedIn(false);
       setLoggingOut(false);
@@ -80,7 +81,7 @@ export default function TopNav({
                 Delivery available across India
               </div>
               <Link
-                to="/products/carts-show/user"
+                to="/cart"
                 className="flex items-center gap-2 rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:border-amber-300 hover:text-amber-200"
               >
                 <CartIcon />
@@ -100,7 +101,7 @@ export default function TopNav({
           <div className="flex flex-wrap items-center gap-2">
             <NavItem to="/products/new">List a product</NavItem>
             <NavItem to="/seller/dashboard">Seller dashboard</NavItem>
-            <NavItem to="/products/carts-show/user">Open cart</NavItem>
+            <NavItem to="/cart">Open cart</NavItem>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">

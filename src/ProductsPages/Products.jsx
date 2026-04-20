@@ -361,7 +361,7 @@ export default function Products({ user }) {
                 <AccentButton onClick={addToCart} disabled={product.quantity < 1}>
                   {product.quantity < 1 ? "Out of stock" : "Add to cart"}
                 </AccentButton>
-                <SecondaryButton onClick={() => navigate("/products/carts-show/user")}>
+                <SecondaryButton onClick={() => navigate("/cart")}>
                   Go to cart
                 </SecondaryButton>
                 <PrimaryButton

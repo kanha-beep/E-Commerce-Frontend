@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
-import { api } from "../api.js";
+import { api, clearAuthToken, getAuthToken } from "../api.js";
 import Auth from "./ProductsAuth/Auth.jsx";
 import CartProducts from "./ProductsCarts/CartProducts.jsx";
 import TopNav from "./components/TopNav.jsx";
@@ -18,11 +18,19 @@ function App() {
 
   useEffect(() => {
     const checkAuth = async () => {
+      if (!getAuthToken()) {
+        setUser(null);
+        setIsLoggedIn(false);
+        setAuthLoading(false);
+        return;
+      }
+
       try {
         const res = await api.get("/api/auth/me");
         setUser(res.data.user);
         setIsLoggedIn(true);
       } catch {
+        clearAuthToken();
         setUser(null);
         setIsLoggedIn(false);
       } finally {
@@ -72,6 +80,7 @@ function App() {
             path="/products/carts-show/:usersId"
             element={<CartProducts isLoggedIn={isLoggedIn} />}
           />
+          <Route path="/cart" element={<CartProducts isLoggedIn={isLoggedIn} />} />
           <Route
             path="/seller/dashboard"
             element={<SellerDashboard isLoggedIn={isLoggedIn} user={user} />}

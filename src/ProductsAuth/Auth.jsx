@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { api } from "../../api.js";
+import { api, setAuthToken } from "../../api.js";
 import {
   AccentButton,
   InlineAlert,
@@ -41,12 +41,14 @@ export default function Auth({ setIsLoggedIn, setUser }) {
         : formData;
 
       const res = await api.post(endpoint, payload);
+      setAuthToken(res.data.token);
       setUser(res.data.user);
       setIsLoggedIn(true);
 
       const redirectUrl = location.state?.url || location.state?.reviewUrl || "/";
       navigate(redirectUrl, { replace: true });
     } catch (err) {
+      setAuthToken("");
       setIsLoggedIn(false);
       setError(
         err.response?.data?.error ||
